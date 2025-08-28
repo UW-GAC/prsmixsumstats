@@ -1,0 +1,64 @@
+---
+title: "Calculating summary statistics for elastic net"
+author: "Dan Schaid"
+date: "`r Sys.Date()`"
+output: html_document
+vignette: >
+  %\VignetteIndexEntry{Calculating summary statistics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+
+Create test data of 3 groups with PRS (nprs) and covariates (sex, age, cov1, cov2)
+
+
+```{r}
+library(prsmixsumstats)
+```
+
+```{r}
+## simulate training data
+nprs <- 4000
+
+n1 <- 1000
+n2 <- 500
+n3 <- 50
+
+dat1 <- sim_test_dat(n1, nprs, prev=.1, beta.sd=2)
+dat2 <- sim_test_dat(n2, nprs, prev=.1, beta.sd=2)
+dat3 <- sim_test_dat(n3, nprs, prev=.1, beta.sd=2)
+
+## make some y's missing
+dat1$y[3:20] <- NA
+dat2$y[15:30] <- NA
+dat3$y[1:16] <- NA
+
+## make some x's missing
+dat1$x[3:5, 4:5] <- NA
+dat2$x[20:30, 5:8] <- NA
+dat3$x[2:10, 6:9] <- NA
+```
+
+# Biobanks Create Summary Statistics (3 demo biobanks)
+
+```{r}
+sumstats1 <-  make_sumstats(dat1$x, dat1$y)
+sumstats2 <-  make_sumstats(dat2$x, dat2$y)
+sumstats3 <-  make_sumstats(dat3$x, dat3$y)
+```
+
+# CC: sum over biobanks
+
+```{r}
+sumstats_comb <- combine_sumstats(list(sumstats1, sumstats2, sumstats3))
+xx <- sumstats_comb$xx
+xy <- sumstats_comb$xx
+
+## note that there is no intercept because x and y are centered on their means
+
+```
