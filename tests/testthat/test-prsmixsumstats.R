@@ -8,14 +8,6 @@ test_that("make_sumstats", {
     ss1 <- make_sumstats_center(dat[[1]]$x, dat[[1]]$y)
     ss2 <- make_sumstats_center(dat[[2]]$x, dat[[2]]$y)
     ss3 <- make_sumstats_center(dat[[3]]$x, dat[[3]]$y)
-    xx <- ss1$xx + ss2$xx + ss3$xx
-    xy <- ss1$xy + ss2$xy + ss3$xy
-    sd <- sqrt(diag(xx))
-    xx <- xx / (sd %o% sd)
-    xy <- xy/ sd
-    # currently not true
-    #expect_true(all(xx == ss$xx))
-    #expect_true(all(xy == ss$xy))
 })
 
 
