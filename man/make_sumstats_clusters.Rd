@@ -4,7 +4,9 @@
 \alias{make_sumstats_clusters}
 \title{make summary stats for each cluster
 each input is expected to be a data table where the first column is sample ID
-this function writes an output file}
+this function writes an output file with a sumstats object for:
+1. all samples together
+2. each cluster with size > min_cluster_size}
 \usage{
 make_sumstats_clusters(
   trait,
@@ -12,7 +14,8 @@ make_sumstats_clusters(
   scores,
   clusters,
   trait_name,
-  cohort_name
+  cohort_name,
+  min_cluster_size = 20
 )
 }
 \arguments{
@@ -27,9 +30,13 @@ make_sumstats_clusters(
 \item{trait_name}{name of trait, used to name output file}
 
 \item{cohort_name}{name of cohort, used to name output file}
+
+\item{min_cluster_size}{minimum size for a cluster to have an output file}
 }
 \description{
 make summary stats for each cluster
 each input is expected to be a data table where the first column is sample ID
-this function writes an output file
+this function writes an output file with a sumstats object for:
+1. all samples together
+2. each cluster with size > min_cluster_size
 }
