@@ -80,6 +80,7 @@ test_that("match_sumstats", {
     expy2 <- setNames(c(rep(0, 2), 3:5), letters[1:5])
     chk <- match_sumstats(list(list(xx=x1, xy=y1), list(xx=x2, xy=y2)))
     expect_equal(chk, list(list(xx=expx1, xy=expy1), list(xx=expx2, xy=expy2)))
+    file.remove("incomplete_scores.txt")
 })
 
 
