@@ -2,23 +2,29 @@
 #' @param sumstats list with elements xx and xy
 #' @export
 combine_sumstats <- function(sumstats){
+  lapply(sumstats, validate_sumstats)
+
   ngroups <- length(sumstats)
   
   xx <- sumstats[[1]]$xx
   xy <- sumstats[[1]]$xy
   
-  nobs <- attr(sumstats[[1]]$xx, "nobs")
-  colsum <- attr(sumstats[[1]]$xx, "colsum")  
-  ysum <- attr(sumstats[[1]]$xy, "ysum")
-  yssq <- attr(sumstats[[1]]$xy, "yssq")
+  nsubj <- attr(sumstats[[1]], "nsubj")
+  nmiss <- attr(sumstats[[1]], "nmiss")
+  nobs <- attr(sumstats[[1]], "nobs")
+  colsum <- attr(sumstats[[1]], "colsum")  
+  ysum <- attr(sumstats[[1]], "ysum")
+  yssq <- attr(sumstats[[1]], "yssq")
   
   for(index in 2:ngroups){
     xx <- xx + sumstats[[index]]$xx
     xy <- xy + sumstats[[index]]$xy
-    nobs <- nobs + attr(sumstats[[index]]$xx, "nobs")
-    colsum <- colsum + attr(sumstats[[index]]$xx, "colsum")  
-    ysum <- ysum + attr(sumstats[[index]]$xy, "ysum")
-    yssq <- yssq + attr(sumstats[[index]]$xy, "yssq")
+    nsubj <- nsubj + attr(sumstats[[index]], "nsubj")
+    nmiss <- nmiss + attr(sumstats[[index]], "nmiss")
+    nobs <- nobs + attr(sumstats[[index]], "nobs")
+    colsum <- colsum + attr(sumstats[[index]], "colsum")  
+    ysum <- ysum + attr(sumstats[[index]], "ysum")
+    yssq <- yssq + attr(sumstats[[index]], "yssq")
   }
   
   ## center and scale xx
@@ -48,26 +54,11 @@ combine_sumstats <- function(sumstats){
   
   beta_multiplier <- sdy / sdx
   
-
-  ## need to remove attr of xx and xy
-  ## because they were copied from sumstats[[1]]
-  ## and not relevant after summing across all
-  ## sumstats
+  ss <- new_sumstats(xx, xy, nsubj, nmiss, nobs, colsum, ysum, yssq)
+  validate_sumstats(ss)
+  attr(ss, "yvar") <- yvar
+  attr(ss, "beta_multiplier") <- beta_multiplier
   
-  attr(xx, "nsubj") <- NULL
-  attr(xx, "nmiss") <- NULL
-  attr(xx, "nobs") <-  NULL
-  attr(xx, "colsum") <- NULL
-  
-  attr(xy, "ysum") <-  NULL
-  attr(xy, "yssq") <-  NULL
-  attr(xy, "nsubj") <- NULL
-  attr(xy, "nmiss") <- NULL
-  attr(xy, "nobs") <- NULL
-  
-  
-  return(list(xx=xx, xy=xy, yvar=yvar, ysum=ysum, nobs=nobs,
-              beta_multiplier=beta_multiplier))
-  
+  return(ss)
 }
 

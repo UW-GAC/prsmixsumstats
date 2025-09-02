@@ -47,18 +47,21 @@ dat3$x[2:10, 6:9] <- NA
 # Biobanks Create Summary Statistics (3 demo biobanks)
 
 ```{r}
-sumstats1 <-  make_sumstats(dat1$x, dat1$y)
-sumstats2 <-  make_sumstats(dat2$x, dat2$y)
-sumstats3 <-  make_sumstats(dat3$x, dat3$y)
+sumstats <- list()
+sumstats[[1]] <-  make_sumstats(dat1$x, dat1$y)
+sumstats[[2]] <-  make_sumstats(dat2$x, dat2$y)
+sumstats[[3]] <-  make_sumstats(dat3$x, dat3$y)
 ```
 
 # CC: sum over biobanks
 
 ```{r}
-sumstats_comb <- combine_sumstats(list(sumstats1, sumstats2, sumstats3))
-xx <- sumstats_comb$xx
-xy <- sumstats_comb$xx
+total_stats <- combine_sumstats(sumstats)
+xx <- total_stats$xx
+xy <- total_stats$xy
 
-## note that there is no intercept because x and y are centered on their means
-
+yvar <- attr(total_stats, "yvar")
+ysum <- attr(total_stats, "ysum")
+nobs <- attr(total_stats, "nobs")
 ```
+
