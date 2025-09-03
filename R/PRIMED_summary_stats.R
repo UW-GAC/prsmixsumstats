@@ -28,15 +28,15 @@ make_sumstats_center <- function(x, y){
   xy <- t(z) %*% y
   names(xy) <-  xcol.names
 
-  attr(xx, "nsubj") <- nsubj
-  attr(xx, "nmiss") <- sum(is.miss)
+  nmiss <- sum(is.miss)
+  nobs <- nsubj - nmiss
+  csum <- colSums(x)
 
-  attr(xy, "ysum") <-  ysum
-  attr(xy, "yssq") <-  sum(y^2, na.rm=TRUE)
-  attr(xy, "nsubj") <- nsubj
-  attr(xy, "nmiss") <- sum(is.miss)
+  yssq <- sum(y^2, na.rm=TRUE)
+  
+  ss <- new_sumstats(xx, xy, nsubj, nmiss, nobs, csum, ysum, yssq)
 
-  return(list(xx=xx, xy=xy))
+  return(ss)
 }
 
 make_varxy <- function(xx, xy, yssq, nsubj){

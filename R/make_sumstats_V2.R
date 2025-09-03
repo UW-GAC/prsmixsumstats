@@ -40,16 +40,9 @@ make_sumstats <- function(x, y){
   xy <- t(x) %*% y
   names(xy) <-  xcol.names
   
-  attr(xx, "nsubj") <- nsubj
-  attr(xx, "nmiss") <- nmiss
-  attr(xx, "nobs") <-  nobs
-  attr(xx, "colsum") <- csum
+  yssq <- sum(y^2, na.rm=TRUE)
   
-  attr(xy, "ysum") <-  ysum
-  attr(xy, "yssq") <-  sum(y^2, na.rm=TRUE)
-  attr(xy, "nsubj") <- nsubj
-  attr(xy, "nmiss") <- nmiss
-  attr(xy, "nobs") <- nobs
-
-  return(list(xx=xx, xy=xy))
+  ss <- new_sumstats(xx, xy, nsubj, nmiss, nobs, csum, ysum, yssq)
+  
+  return(ss)
 }

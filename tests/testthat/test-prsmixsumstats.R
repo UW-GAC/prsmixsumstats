@@ -1,13 +1,34 @@
 test_that("make_sumstats", {
     dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
     ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
+    validate_sumstats(ss1)
+    expect_equal(dim(ss1$xx), c(1004,1004))
+    expect_equal(dim(ss1$xy), c(1004,1))
+    expect_equal(attr(ss1, "nsubj"), 100)
+    expect_equal(attr(ss1, "nmiss"), 18)
+})
+
+
+test_that("make_sumstats_center", {
+    dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
+    ss1 <- make_sumstats_center(dat[[1]]$x, dat[[1]]$y)
+    validate_sumstats(ss1)
+    expect_equal(dim(ss1$xx), c(1004,1004))
+    expect_equal(dim(ss1$xy), c(1004,1))
+    expect_equal(attr(ss1, "nsubj"), 100)
+    expect_equal(attr(ss1, "nmiss"), 18)
+})
+
+
+test_that("combine_sumstats", {
+    dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
+    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
     ss2 <- make_sumstats(dat[[2]]$x, dat[[2]]$y)
     ss3 <- make_sumstats(dat[[3]]$x, dat[[3]]$y)
     ss <- combine_sumstats(list(ss1, ss2, ss3))
-    # show that is is the same as centering first
-    ss1 <- make_sumstats_center(dat[[1]]$x, dat[[1]]$y)
-    ss2 <- make_sumstats_center(dat[[2]]$x, dat[[2]]$y)
-    ss3 <- make_sumstats_center(dat[[3]]$x, dat[[3]]$y)
+    expect_equal(dim(ss1$xx), c(1004,1004))
+    expect_equal(dim(ss1$xy), c(1004,1))
+    expect_equal(attr(ss, "nsubj"), 180)
 })
 
 
@@ -17,7 +38,7 @@ test_that("make_sumstats_clusters", {
     all <- readRDS("pheno_cohort_sumstats.rds")
     c1 <- readRDS("pheno_cohort_cluster1_sumstats.rds")
     c2 <- readRDS("pheno_cohort_cluster2_sumstats.rds")
-    expect_equal(attr(all$xx, "nsubj"), 80)
+    expect_equal(attr(all, "nsubj"), 80)
     expect_true(all(abs(all$xy - (c1$xy + c2$xy)) < 1e-7))
     file.remove(paste0("pheno_cohort", c("", "_cluster1", "_cluster2"), "_sumstats.rds"))
 })
