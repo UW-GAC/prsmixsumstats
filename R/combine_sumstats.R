@@ -1,5 +1,6 @@
 #' Combine summary statistics
-#' @param sumstats list with elements xx and xy
+#' @param sumstats list of sumstats objects
+#' @return sumstats object that results from summing over the elements of the input list, with additional attributes 'yvar' and 'beta_multiplier'
 #' @export
 combine_sumstats <- function(sumstats){
   lapply(sumstats, validate_sumstats)

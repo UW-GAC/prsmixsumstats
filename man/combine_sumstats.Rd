@@ -7,7 +7,10 @@
 combine_sumstats(sumstats)
 }
 \arguments{
-\item{sumstats}{list with elements xx and xy}
+\item{sumstats}{list of sumstats objects}
+}
+\value{
+sumstats object that results from summing over the elements of the input list, with additional attributes 'yvar' and 'beta_multiplier'
 }
 \description{
 Combine summary statistics

@@ -7,10 +7,14 @@
 #' important: x and y must have the same number of subjects
 #' and ordered the same way according to subject ID, but ID 
 #' should not be a column of X
+#' 
+#' returns a sumstats object, which contains two list elements:
+#' 1. matrix of x'x where x is nxp design matrix
+#' 2. vector of x'y where y is nx1 trait vector
 #'
 #' @param x design matrix with rows as individual observations
 #' @param y vector with outcomes, length should match nrow(x)
-#' @return list of x'x and x'y 
+#' @return sumstats object with elements xx and xy 
 #' @export
 make_sumstats <- function(x, y){
   stopifnot(nrow(x) == length(y))

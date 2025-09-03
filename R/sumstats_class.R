@@ -6,6 +6,7 @@ new_sumstats <- function(xx, xy, nsubj, nmiss, nobs, colsum, ysum, yssq) {
     attr(ss, "colsum") <- colsum
     attr(ss, "ysum") <-  ysum
     attr(ss, "yssq") <-  yssq
+    class(ss) <- "sumstats"
     return(ss)
 }
 
