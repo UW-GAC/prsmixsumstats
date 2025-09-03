@@ -5,8 +5,7 @@
 \title{Compute elastic net from summary statistics}
 \usage{
 glmnet_sumstats(
-  xx,
-  xy,
+  sumstats,
   beta_init,
   alpha,
   lambda,
@@ -18,10 +17,6 @@ glmnet_sumstats(
 )
 }
 \arguments{
-\item{xx}{matrix of x'x where x is nxp design matrix}
-
-\item{xy}{vector of x'y where y is nx1 trait vector}
-
 \item{beta_init}{is px1 vector of starting values}
 
 \item{alpha}{(range 0-1) is fraction of penalty for L1 penalty
@@ -45,6 +40,10 @@ See Yang, Y., & Zou, H. (2012). A coordinate majorization descent algorithm for 
 Journal of Statistical Computation and Simulation, 84(1), 84–95. https://doi.org/10.1080/00949655.2012.695374}
 
 \item{verbose}{prints summary results at each interation if verbose=TRUE}
+
+\item{xx}{matrix of x'x where x is nxp design matrix}
+
+\item{xy}{vector of x'y where y is nx1 trait vector}
 }
 \value{
 list with fitted beta, number of iterations, convegence (true/false), and input penalty parameters

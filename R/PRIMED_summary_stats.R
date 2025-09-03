@@ -79,10 +79,14 @@ make_varxy <- function(xx, xy, yssq, nsubj){
 #' alpha and lambda
 #' @author Dan Schaid (schaid@mayo.edu)
 #' @export
-glmnet_sumstats <- function(xx, xy, beta_init, alpha, lambda, penalty_factor,
+glmnet_sumstats <- function(sumstats, beta_init, alpha, lambda, penalty_factor,
                             maxiter=500, tol=1e-5, f.adj=2, verbose=FALSE){
+  validate_sumstats(sumstats)
+  xx <- sumstats$xx
+  xy <- sumstats$xy
+  
   eps <- 1e-3 ## used to check whether a beta is penalized by penalty_factor
-
+  
   lambda_pen <- lambda * penalty_factor
   np <- ncol(xx)
   if(is.null(beta_init)){
