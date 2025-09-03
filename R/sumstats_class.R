@@ -17,4 +17,7 @@ validate_sumstats <- function(ss) {
     stopifnot(ncol(ss$xy) == 1)
     stopifnot(attr(ss, "nsubj") == attr(ss, "nobs") + attr(ss, "nmiss"))
     stopifnot(length(attr(ss, "colsum")) == nrow(ss$xx))
+    stopifnot(all(colnames(ss$xx) == rownames(ss$xx)))
+    stopifnot(all(colnames(ss$xx) == colnames(ss$xy)))
+    stopifnot(all(colnames(ss$xx) == names(attr(ss, "colsum"))))
 }

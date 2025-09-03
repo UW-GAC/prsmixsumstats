@@ -4,6 +4,8 @@
 #' @export
 combine_sumstats <- function(sumstats){
   lapply(sumstats, validate_sumstats)
+  matched_sumstats <- match_sumstats(sumstats)
+  sumstats <- matched_sumstats$sumstats
 
   ngroups <- length(sumstats)
   
@@ -57,9 +59,8 @@ combine_sumstats <- function(sumstats){
   
   ss <- new_sumstats(xx, xy, nsubj, nmiss, nobs, colsum, ysum, yssq)
   validate_sumstats(ss)
-  attr(ss, "yvar") <- yvar
-  attr(ss, "beta_multiplier") <- beta_multiplier
   
-  return(ss)
+  return(list(sumstats=ss, yvar=yvar, beta_multiplier=beta_multiplier))#,
+              #incomplete_cols=matched_sumstats$incomplete_cols))
 }
 

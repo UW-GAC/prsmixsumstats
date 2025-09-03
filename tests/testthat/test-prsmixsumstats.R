@@ -25,7 +25,8 @@ test_that("combine_sumstats", {
     ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
     ss2 <- make_sumstats(dat[[2]]$x, dat[[2]]$y)
     ss3 <- make_sumstats(dat[[3]]$x, dat[[3]]$y)
-    ss <- combine_sumstats(list(ss1, ss2, ss3))
+    chk <- combine_sumstats(list(ss1, ss2, ss3))
+    ss <- chk$sumstats
     expect_equal(dim(ss1$xx), c(1004,1004))
     expect_equal(dim(ss1$xy), c(1004,1))
     expect_equal(attr(ss, "nsubj"), 180)
@@ -55,54 +56,99 @@ test_that("only one cluster", {
 
 
 test_that("add_cols_square_matrix", {
-  x <- matrix(1, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
-  col_names <- c("d", "e")
-  chk <- add_cols_square_matrix(x, col_names)
-  exp <- matrix(c(rep(c(rep(1, 3), rep(0, 2)), 3), rep(rep(0, 5), 2)), byrow=TRUE, nrow=5, ncol=5,
-                 dimnames=list(letters[1:5], letters[1:5]))
-  expect_equal(chk, exp)
+    x <- matrix(1, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
+    col_names <- c("d", "e")
+    chk <- add_cols_square_matrix(x, col_names)
+    exp <- matrix(c(rep(c(rep(1, 3), rep(0, 2)), 3), rep(rep(0, 5), 2)), byrow=TRUE, nrow=5, ncol=5, 
+                  dimnames=list(letters[1:5], letters[1:5]))
+    expect_equal(chk, exp)
+})
+
+
+test_that("add_rows_matrix", {
+    x <- matrix(1, nrow=3, ncol=1, dimnames=list(letters[1:3], NULL))
+    col_names <- c("d", "e")
+    chk <- add_rows_matrix(x, col_names)
+    exp <- matrix(c(rep(1, 3), rep(0, 2)), byrow=FALSE, nrow=5, ncol=1,
+                  dimnames=list(letters[1:5], NULL))
+    expect_equal(chk, exp)
 })
 
 
 test_that("add_cols_sumstats", {
-    x <- matrix(1, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
+    xx <- matrix(1, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
+    xy <- matrix(1:3, nrow=3, ncol=1, dimnames=list(letters[1:3], NULL))
     col_names <- c("d", "e")
-    ss <- list(xx=x, xy=setNames(1:3, letters[1:3]))
+    ss <- structure(list(xx=xx, xy=xy), "colsum"=colSums(xx))
     chk <- add_cols_sumstats(ss, col_names)
     exp1 <- matrix(c(rep(c(rep(1, 3), rep(0, 2)), 3), rep(rep(0, 5), 2)), byrow=TRUE, nrow=5, ncol=5,
                   dimnames=list(letters[1:5], letters[1:5]))
-    exp2 <- setNames(c(1:3, rep(0, 2)), letters[1:5])
-    expect_equal(chk, list(xx=exp1, xy=exp2))
-    match_cols_sumstats(ss, c("c", "b", "a"))
+    exp2 <- matrix(c(1:3, rep(0, 2)), nrow=5, ncol=1, dimnames=list(letters[1:5], NULL))
+    exps <- setNames(c(colSums(xx), rep(0, 2)), letters[1:5])
+    expect_equal(chk, structure(list(xx=exp1, xy=exp2), colsum=exps))
 })
 
 
 test_that("match_cols_sumstats", {
-    x <- matrix(rep(1:3, 3), byrow=TRUE, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
-    y <- setNames(1:3, letters[1:3])
-    ss <- list(xx=x, xy=y)
+    xx <- matrix(rep(1:3, 3), byrow=TRUE, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
+    xy <- matrix(1:3, nrow=3, ncol=1, dimnames=list(letters[1:3], NULL))
+    ss <- structure(list(xx=xx, xy=xy), "colsum"=colSums(xx))
     chk <- match_cols_sumstats(ss, letters[3:1])
     exp1 <- matrix(rep(3:1, 3), byrow=TRUE, nrow=3, ncol=3, dimnames=list(letters[3:1], letters[3:1]))
-    exp2 <- setNames(3:1, letters[3:1])
-    expect_equal(chk, list(xx=exp1, xy=exp2))
+    exp2 <- matrix(3:1, nrow=3, ncol=1, dimnames=list(letters[3:1], NULL))
+    exps <- setNames(rev(colSums(xx)), letters[3:1])
+    expect_equal(chk, structure(list(xx=exp1, xy=exp2), colsum=exps))
 })
 
 
 test_that("match_sumstats", {
-    x1 <- matrix(rep(1:3, 3), byrow=TRUE, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
-    y1 <- setNames(1:3, letters[1:3])
-    x2 <- matrix(rep(3:5, 3), byrow=TRUE, nrow=3, ncol=3, dimnames=list(letters[3:5], letters[3:5]))
-    y2 <- setNames(3:5, letters[3:5])
+    xx1 <- matrix(rep(1:3, 3), byrow=TRUE, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
+    xy1 <- matrix(1:3, nrow=3, ncol=1, dimnames=list(letters[1:3], NULL))
+    xx2 <- matrix(rep(3:5, 3), byrow=TRUE, nrow=3, ncol=3, dimnames=list(letters[3:5], letters[3:5]))
+    xy2 <- matrix(3:5, nrow=3, ncol=1, dimnames=list(letters[3:5], NULL))
     expx1 <- matrix(c(rep(c(1:3, rep(0, 2)), 3), rep(rep(0, 5), 2)), byrow=TRUE, nrow=5, ncol=5,
                     dimnames=list(letters[1:5], letters[1:5]))
-    expy1 <- setNames(c(1:3, rep(0, 2)), letters[1:5])
+    expy1 <- matrix(c(1:3, rep(0, 2)), nrow=5, ncol=1, dimnames=list(letters[1:5], NULL))
+    exps1 <- setNames(c(3,6,9,0,0), letters[1:5])
     expx2 <- matrix(c(rep(rep(0, 5), 2), rep(c(rep(0, 2), 3:5), 3)), byrow=TRUE, nrow=5, ncol=5,
                     dimnames=list(letters[1:5], letters[1:5]))
-    expy2 <- setNames(c(rep(0, 2), 3:5), letters[1:5])
-    chk <- match_sumstats(list(list(xx=x1, xy=y1), list(xx=x2, xy=y2)))
-    expect_equal(chk, list(list(xx=expx1, xy=expy1), list(xx=expx2, xy=expy2)))
-    file.remove("incomplete_scores.txt")
+    expy2 <- matrix(c(rep(0, 2), 3:5), nrow=5, ncol=1, dimnames=list(letters[1:5], NULL))
+    exps2 <- setNames(c(0,0,9,12,15), letters[1:5])
+    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(xx1))
+    ss2 <- structure(list(xx=xx2, xy=xy2), colsum=colSums(xx2))
+    chk <- match_sumstats(list(ss1, ss2))
+    expect_equal(chk$sumstats, list(
+        structure(list(xx=expx1, xy=expy1), colsum=exps1), 
+        structure(list(xx=expx2, xy=expy2), colsum=exps2)
+        ))
 })
 
 
+test_that("match_sumstats identical", {
+    xx1 <- matrix(rep(1:3, 3), byrow=TRUE, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
+    xy1 <- matrix(1:3, byrow=TRUE, nrow=3, ncol=1, dimnames=list(letters[1:3], NULL))
+    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(x1))
+    ss <- list(ss1, ss1)
+    chk <- match_sumstats(ss)
+    expect_equal(chk$sumstats, ss)
+    expect_equal(chk$incomplete_cols, character())
+})
+
+
+test_that("match_sumstats big", {
+    dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
+    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
+    ss2 <- make_sumstats(dat[[2]]$x, dat[[2]]$y)
+    ss3 <- make_sumstats(dat[[3]]$x, dat[[3]]$y)
+    ss <- list(ss1, ss2, ss3)
+    chk <- match_sumstats(ss)
+    expect_equal(chk$sumstats, ss)
+    expect_equal(chk$incomplete_cols, character())
+})
+
+
+test_that("combine_matched_sumstats", {
+    dat <- .example_data_diffprs(n1=100, n2=50, nprs1=1000, nprs2=1050)
+    #chk <- combine_sumstats(dat)
+})
 

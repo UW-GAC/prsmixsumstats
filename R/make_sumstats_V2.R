@@ -42,7 +42,7 @@ make_sumstats <- function(x, y){
   y <- y[!is.miss]
   ysum <- sum(y, na.rm=TRUE)
   xy <- t(x) %*% y
-  names(xy) <-  xcol.names
+  #names(xy) <-  xcol.names
   
   yssq <- sum(y^2, na.rm=TRUE)
   
