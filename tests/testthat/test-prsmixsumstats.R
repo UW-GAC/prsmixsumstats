@@ -19,6 +19,17 @@ test_that("make_sumstats_clusters", {
     c2 <- readRDS("pheno_cohort_cluster2_sumstats.rds")
     expect_equal(attr(all$xx, "nsubj"), 80)
     expect_true(all(abs(all$xy - (c1$xy + c2$xy)) < 1e-7))
+    file.remove(paste0("pheno_cohort", c("", "_cluster1", "_cluster2"), "_sumstats.rds"))
+})
+
+
+test_that("only one cluster", {
+    dat <- .example_cluster_data(n=100, nprs=1000)
+    make_sumstats_clusters(dat$trait, dat$covariates, dat$scores, dat$clusters, "pheno", "cohort",
+                           min_cluster_size = 40)
+    expect_true(file.exists("pheno_cohort_cluster1_sumstats.rds"))
+    expect_false(file.exists("pheno_cohort_cluster2_sumstats.rds"))
+    file.remove(paste0("pheno_cohort", c("", "_cluster1"), "_sumstats.rds"))
 })
 
 
@@ -69,6 +80,7 @@ test_that("match_sumstats", {
     expy2 <- setNames(c(rep(0, 2), 3:5), letters[1:5])
     chk <- match_sumstats(list(list(xx=x1, xy=y1), list(xx=x2, xy=y2)))
     expect_equal(chk, list(list(xx=expx1, xy=expy1), list(xx=expx2, xy=expy2)))
+    file.remove("incomplete_scores.txt")
 })
 
 

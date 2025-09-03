@@ -27,6 +27,6 @@
     trait <- data.frame(id, pheno=dat$y)
     covariates <- cbind(id, as.data.frame(dat$x[,1:4]))
     scores <- cbind(id, as.data.frame(dat$x[,5:(4+nprs)]))
-    clusters <- data.frame(id, cluster=c(rep(1,ceiling(n/2)), rep(2,floor(n/2))))
+    clusters <- data.frame(id, cluster=c(rep(1,ceiling(2*n/3)), rep(2,floor(n/3))))
     return(list(trait=trait[1:(n-10),], covariates=covariates[11:n,], scores=scores, clusters=clusters))
 }
