@@ -43,6 +43,7 @@ make_sumstats_center <- function(x, y){
 #' @param xx X'X matrix
 #' @param xy X'Y matrix
 #' @param yssq sum of y^2
+#' @export
 make_varxy <- function(xx, xy, yssq){
   ## create var mat for later simulations
   vx <- xx
@@ -87,6 +88,8 @@ glmnet_sumstats <- function(sumstats, beta_init, alpha, lambda, penalty_factor,
   validate_sumstats(sumstats)
   xx <- sumstats$xx
   xy <- sumstats$xy
+  stopifnot(length(beta_init) == ncol(xx))
+  stopifnot(length(penalty_factor) == ncol(xx))
   
   eps <- 1e-3 ## used to check whether a beta is penalized by penalty_factor
   
