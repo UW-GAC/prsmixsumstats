@@ -1,6 +1,5 @@
 ## summary stat functions for glmnet with summary stats
 
-
 make_sumstats_center <- function(x, y){
   ## important: x and y must have the same number of subjects
   ## and ordered the same way according to subject ID, but ID
@@ -39,6 +38,11 @@ make_sumstats_center <- function(x, y){
   return(ss)
 }
 
+
+#' create variance matrix
+#' @param xx X'X matrix
+#' @param xy X'Y matrix
+#' @param yssq sum of y^2
 make_varxy <- function(xx, xy, yssq){
   ## create var mat for later simulations
   vx <- xx
@@ -209,8 +213,15 @@ gradient <- function(index, beta, xx, xy, alpha, lambda_pen){
 }
 
 
-
+#' calculate AUC from glmnet_sumstats results
+#' @param beta beta from glmnet_sumstats
+#' @param xx X'X matrix that went into glmnet_sumstats
+#' @param vary variance of Y
+#' @param ncase number of cases
+#' @param ncont number of controls
+#' @return list with AUC and R2
 #' @importFrom stats pnorm
+#' @export
 auc_glmnet_sumstats <- function(beta, xx, vary, ncase, ncont){
   ssr <- t(beta) %*% xx %*% beta
   sst <- vary #* nsubj
@@ -220,6 +231,7 @@ auc_glmnet_sumstats <- function(beta, xx, vary, ncase, ncont){
   auc <- pnorm(d/sqrt(2))
   return(list(auc=auc, r2=r2))
 }
+
 
 #' Simulate example data
 #' @param nsubj number of subjects
