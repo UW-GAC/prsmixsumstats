@@ -12,6 +12,7 @@
 #' @param trait_name name of trait, used to name output file
 #' @param cohort_name name of cohort, used to name output file
 #' @param min_cluster_size minimum size for a cluster to have an output file
+#' @export
 make_sumstats_clusters <- function(trait, covariates, scores, clusters, trait_name, cohort_name,
                                    min_cluster_size = 20) {
   ids <- intersect(trait[[1]], covariates[[1]])
