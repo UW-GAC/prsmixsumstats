@@ -12,7 +12,7 @@ make_sumstats(x, y)
 \item{y}{vector with outcomes, length should match nrow(x)}
 }
 \value{
-list of x'x and x'y
+sumstats object with elements xx and xy
 }
 \description{
 From input design matrix x and outcome vector y, compute x'x and x'y
@@ -23,4 +23,9 @@ this version does not center x and y, anticipating centering later
 important: x and y must have the same number of subjects
 and ordered the same way according to subject ID, but ID 
 should not be a column of X
+
+returns a sumstats object, which contains two list elements:
+1. matrix of x'x where x is nxp design matrix
+2. vector of x'y where y is nx1 trait vector
+attributes of the sumstats object: nsubj, nmiss, nobs, colsum, ysum, yssq
 }

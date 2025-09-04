@@ -1,8 +1,20 @@
 #' Combine summary statistics
-#' @param sumstats list with elements xx and xy
+#' 
+#' Combines summary statistics, centers and scales
+#' 
+#' Summary statistics in the input list are summed. Columns that are present 
+#' in one list element but not others are set to zero when computing the sum.
+#' The resules are centered and scaled and divdided by the number of observations.
+#' 
+#' @param sumstats list of sumstats objects
+#' @return list of 1. sumstats object, 2. yvar (which should be 1), 
+#' 3. beta_multiplier, 4. list of columns with incomplete data (missing in at least
+#' one list element)
 #' @export
 combine_sumstats <- function(sumstats){
   lapply(sumstats, validate_sumstats)
+  matched_sumstats <- match_sumstats(sumstats)
+  sumstats <- matched_sumstats$sumstats
 
   ngroups <- length(sumstats)
   
@@ -56,9 +68,8 @@ combine_sumstats <- function(sumstats){
   
   ss <- new_sumstats(xx, xy, nsubj, nmiss, nobs, colsum, ysum, yssq)
   validate_sumstats(ss)
-  attr(ss, "yvar") <- yvar
-  attr(ss, "beta_multiplier") <- beta_multiplier
   
-  return(ss)
+  return(list(sumstats=ss, yvar=yvar, beta_multiplier=beta_multiplier,
+              incomplete_cols=matched_sumstats$incomplete_cols))
 }
 

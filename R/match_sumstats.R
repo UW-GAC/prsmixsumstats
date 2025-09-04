@@ -1,35 +1,39 @@
-#' @importFrom stats setNames
 match_sumstats <- function(sumstats) {
-  cols <- lapply(sumstats, function(x) names(x$xy))
+  cols <- lapply(sumstats, function(x) colnames(x$xx))
   cols_intersect <- cols[[1]]
   cols_union <- cols[[1]]
   for (i in 2:length(cols)) {
     cols_intersect <- intersect(cols_intersect, cols[[i]])
     cols_union <- union(cols_union, cols[[i]])
   }
-  writeLines(setdiff(cols_union, cols_intersect), "incomplete_scores.txt")
+  incomplete_cols <- setdiff(cols_union, cols_intersect)
   tmp <- list()
   for (i in 1:length(sumstats)) {
     missing_cols <- setdiff(cols_union, cols[[i]])
     tmp[[i]] <- add_cols_sumstats(sumstats[[i]], missing_cols)
     tmp[[i]] <- match_cols_sumstats(tmp[[i]], cols_union)
   }
-  return(tmp)
+  lapply(tmp, validate_sumstats)
+  return(list(sumstats=tmp, incomplete_cols=incomplete_cols))
 }
 
 
 match_cols_sumstats <- function(ss, col_names) {
-  tmp <- list()
+  tmp <- ss
   tmp$xx <- ss$xx[col_names, col_names]
-  tmp$xy <- ss$xy[col_names]
+  tmp$xy <- ss$xy[col_names,,drop=FALSE]
+  attr(tmp, "colsum") <- attr(ss, "colsum")[col_names]
   return(tmp)
 }
 
 
+#' @importFrom stats setNames
 add_cols_sumstats <- function(ss, col_names) {
-  tmp <- list()
+  tmp <- ss
   tmp$xx <- add_cols_square_matrix(ss$xx, col_names)
-  tmp$xy <- c(ss$xy, setNames(rep(0, length(col_names)), col_names))
+  tmp$xy <- add_rows_matrix(ss$xy, col_names)
+  xzeros <- setNames(rep(0, length(col_names)), col_names)
+  attr(tmp, "colsum") <- c(attr(ss, "colsum"), xzeros)
   return(tmp)
 }
 
@@ -40,4 +44,11 @@ add_cols_square_matrix <- function(x, col_names) {
   xr <- matrix(0, ncol=ncol(x), nrow=length(col_names), dimnames=list(col_names, NULL))
   x <- rbind(x, xr)
   return(x)
+}
+
+
+add_rows_matrix <- function(x, col_names) {
+    xr <- matrix(0, ncol=ncol(x), nrow=length(col_names), dimnames=list(col_names, NULL))
+    x <- rbind(x, xr)
+    return(x)
 }
