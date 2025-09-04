@@ -64,6 +64,11 @@ yvar <- attr(total_stats, "yvar")
 ysum <- attr(total_stats, "ysum")
 nobs <- attr(total_stats, "nobs")
 
+## vmat used later for simulations to create simulated validation data
+## used to choose lambda that gives best fit
+## after standardizing x and y, vmat is a correlation matrix of y and x
+vmat <- make_varxy(xx, xy, yvar)
+
 ## note that there is no intercept because x and y are centered on their means
 
 penalty_factor <- rep(1,ncol(xx))
@@ -74,8 +79,6 @@ penalty_factor <- rep(1,ncol(xx))
 # fit a grid of lambda's
 
 ```{r}
-
-#library(glmnet)
 ## alpha weights abs(beta) and (1-alpha) weights beta^2
 alpha <- 0.5
 lambda_max <- max(abs(xy))/alpha

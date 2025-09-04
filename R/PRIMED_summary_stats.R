@@ -26,7 +26,7 @@ make_sumstats_center <- function(x, y){
   ysum <- sum(y, na.rm=TRUE)
   y <- scale(y, scale=FALSE)
   xy <- t(z) %*% y
-  names(xy) <-  xcol.names
+  #names(xy) <-  xcol.names
 
   nmiss <- sum(is.miss)
   nobs <- nsubj - nmiss
@@ -39,13 +39,13 @@ make_sumstats_center <- function(x, y){
   return(ss)
 }
 
-make_varxy <- function(xx, xy, yssq, nsubj){
+make_varxy <- function(xx, xy, yssq){
   ## create var mat for later simulations
   vx <- xx
   vxy <- xy
   v12 <- c(yssq, vxy)
   vmat <- rbind(v12, cbind(vxy, vx))
-  vmat <- vmat/ nsubj
+  #vmat <- vmat/ nsubj
   return(vmat)
 }
 
@@ -212,9 +212,9 @@ gradient <- function(index, beta, xx, xy, alpha, lambda_pen){
 
 
 #' @importFrom stats pnorm
-auc_glmnet_sumstats <- function(beta, xx, vary, nsubj,  ncase, ncont){
+auc_glmnet_sumstats <- function(beta, xx, vary, ncase, ncont){
   ssr <- t(beta) %*% xx %*% beta
-  sst <- vary * nsubj
+  #sst <- vary * nsubj
   r2 <- ssr/sst
   a <- (ncase + ncont)^2/(ncase * ncont)
   d <- sqrt(a*r2)/sqrt(1-r2)
