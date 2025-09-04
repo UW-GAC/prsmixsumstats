@@ -1,6 +1,5 @@
 ## summary stat functions for glmnet with summary stats
 
-
 make_sumstats_center <- function(x, y){
   ## important: x and y must have the same number of subjects
   ## and ordered the same way according to subject ID, but ID
@@ -26,7 +25,7 @@ make_sumstats_center <- function(x, y){
   ysum <- sum(y, na.rm=TRUE)
   y <- scale(y, scale=FALSE)
   xy <- t(z) %*% y
-  names(xy) <-  xcol.names
+  #names(xy) <-  xcol.names
 
   nmiss <- sum(is.miss)
   nobs <- nsubj - nmiss
@@ -39,13 +38,19 @@ make_sumstats_center <- function(x, y){
   return(ss)
 }
 
-make_varxy <- function(xx, xy, yssq, nsubj){
+
+#' create variance matrix
+#' @param xx X'X matrix
+#' @param xy X'Y matrix
+#' @param yssq sum of y^2
+#' @export
+make_varxy <- function(xx, xy, yssq){
   ## create var mat for later simulations
   vx <- xx
   vxy <- xy
   v12 <- c(yssq, vxy)
   vmat <- rbind(v12, cbind(vxy, vx))
-  vmat <- vmat/ nsubj
+  #vmat <- vmat/ nsubj
   return(vmat)
 }
 
@@ -55,8 +60,7 @@ make_varxy <- function(xx, xy, yssq, nsubj){
 #' Fit an elastic net model based on summary statistics for specified
 #' penalty parameters alpha and lambda
 #'
-#' @param xx matrix of x'x where x is nxp design matrix
-#' @param xy vector of x'y where y is nx1 trait vector
+#' @param sumstats object with elements xx: matrix of x'x where x is nxp design matrix, xy: vector of x'y where y is nx1 trait vector
 #' @param beta_init is px1 vector of starting values
 #' @param alpha (range 0-1) is fraction of penalty for L1 penalty
 #' and (1-alpha) is fraction for L2 penalty
@@ -72,17 +76,23 @@ make_varxy <- function(xx, xy, yssq, nsubj){
 #' Note that larger values of f.adj cause more iterations.
 #' See Yang, Y., & Zou, H. (2012). A coordinate majorization descent algorithm for L1 penalized learning.
 #' Journal of Statistical Computation and Simulation, 84(1), 84–95. https://doi.org/10.1080/00949655.2012.695374
-#' @param verbose prints summary results at each interation if verbose=TRUE
+#' @param verbose prints summary results at each iteration if verbose=TRUE
 #' @details
 #' Cyclic coordinate descent is used to fit an elastic net model based on minimizing penalized least squared.
-#' @returns list with fitted beta, number of iterations, convegence (true/false), and input penalty parameters
+#' @returns list with fitted beta, number of iterations, convergence (true/false), and input penalty parameters
 #' alpha and lambda
 #' @author Dan Schaid (schaid@mayo.edu)
 #' @export
-glmnet_sumstats <- function(xx, xy, beta_init, alpha, lambda, penalty_factor,
+glmnet_sumstats <- function(sumstats, beta_init, alpha, lambda, penalty_factor,
                             maxiter=500, tol=1e-5, f.adj=2, verbose=FALSE){
+  validate_sumstats(sumstats)
+  xx <- sumstats$xx
+  xy <- sumstats$xy
+  stopifnot(length(beta_init) == ncol(xx))
+  stopifnot(length(penalty_factor) == ncol(xx))
+  
   eps <- 1e-3 ## used to check whether a beta is penalized by penalty_factor
-
+  
   lambda_pen <- lambda * penalty_factor
   np <- ncol(xx)
   if(is.null(beta_init)){
@@ -206,17 +216,25 @@ gradient <- function(index, beta, xx, xy, alpha, lambda_pen){
 }
 
 
-
+#' calculate AUC from glmnet_sumstats results
+#' @param beta beta from glmnet_sumstats
+#' @param xx X'X matrix that went into glmnet_sumstats
+#' @param vary variance of Y
+#' @param ncase number of cases
+#' @param ncont number of controls
+#' @return list with AUC and R2
 #' @importFrom stats pnorm
-auc_glmnet_sumstats <- function(beta, xx, vary, nsubj,  ncase, ncont){
+#' @export
+auc_glmnet_sumstats <- function(beta, xx, vary, ncase, ncont){
   ssr <- t(beta) %*% xx %*% beta
-  sst <- vary * nsubj
+  sst <- vary #* nsubj
   r2 <- ssr/sst
   a <- (ncase + ncont)^2/(ncase * ncont)
   d <- sqrt(a*r2)/sqrt(1-r2)
   auc <- pnorm(d/sqrt(2))
   return(list(auc=auc, r2=r2))
 }
+
 
 #' Simulate example data
 #' @param nsubj number of subjects

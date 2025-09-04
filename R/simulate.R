@@ -1,9 +1,12 @@
-
-## simulate y and X matrix from covariance
-## matrix:
-##        | var(y),  cov(y,x) |
-## vmat = | cov(x,y) cov(x,x) |
-## and return matrix [Y|X]
+#' simulate y and X matrix from covariance
+#' matrix:
+#'        | var(y),  cov(y,x) |
+#' vmat = | cov(x,y) cov(x,x) |
+#' and return matrix [Y|X]
+#' @param n number of rows
+#' @param vmat variance matrix
+#' @return matrix [Y|X]
+#' @export
 simulate_yx <- function(n, vmat) {
     p <- ncol(vmat)
     svd_decomp <- svd(vmat)
