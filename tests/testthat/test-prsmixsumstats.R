@@ -127,7 +127,7 @@ test_that("match_sumstats", {
 test_that("match_sumstats identical", {
     xx1 <- matrix(rep(1:3, 3), byrow=TRUE, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
     xy1 <- matrix(1:3, byrow=TRUE, nrow=3, ncol=1, dimnames=list(letters[1:3], NULL))
-    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(x1))
+    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(xx1))
     ss <- list(ss1, ss1)
     chk <- match_sumstats(ss)
     expect_equal(chk$sumstats, ss)
