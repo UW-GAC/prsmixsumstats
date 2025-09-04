@@ -60,7 +60,7 @@ combine_sumstats <- function(sumstats){
   ss <- new_sumstats(xx, xy, nsubj, nmiss, nobs, colsum, ysum, yssq)
   validate_sumstats(ss)
   
-  return(list(sumstats=ss, yvar=yvar, beta_multiplier=beta_multiplier))#,
-              #incomplete_cols=matched_sumstats$incomplete_cols))
+  return(list(sumstats=ss, yvar=yvar, beta_multiplier=beta_multiplier,
+              incomplete_cols=matched_sumstats$incomplete_cols))
 }
 

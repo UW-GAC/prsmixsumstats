@@ -149,6 +149,12 @@ test_that("match_sumstats big", {
 
 test_that("combine_matched_sumstats", {
     dat <- .example_data_diffprs(n1=100, n2=50, nprs1=1000, nprs2=1050)
-    #chk <- combine_sumstats(dat)
+    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
+    ss2 <- make_sumstats(dat[[2]]$x, dat[[2]]$y)
+    ss <- list(ss1, ss2)
+    chk <- combine_sumstats(ss)
+    expect_equal(ncol(chk$sumstats$xx), 1054)
+    expect_equal(length(chk$incomplete_cols), 50)
+    expect_equal(attr(chk$sumstats, "nsubj"), 150)
 })
 
