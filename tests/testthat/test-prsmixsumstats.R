@@ -156,5 +156,12 @@ test_that("combine_matched_sumstats", {
     expect_equal(ncol(chk$sumstats$xx), 1054)
     expect_equal(length(chk$incomplete_cols), 50)
     expect_equal(attr(chk$sumstats, "nsubj"), 150)
+    expect_equal(attr(chk$sumstats, "nmiss"), attr(ss1, "nmiss") + attr(ss2, "nmiss"))
+    expect_equal(attr(chk$sumstats, "nobs"), attr(ss1, "nobs") + attr(ss2, "nobs"))
+    expect_equal(attr(chk$sumstats, "colsum")[1:1004], attr(ss1, "colsum")[1:1004] + attr(ss2, "colsum")[1:1004])
+    expect_equal(attr(chk$sumstats, "colsum")[1005:1054], attr(ss2, "colsum")[1005:1054])
+    expect_equal(attr(chk$sumstats, "ysum"), attr(ss1, "ysum") + attr(ss2, "ysum"))
+    # not this is not true because yssq was set to yssq - ysum^2/nobs
+    #expect_equal(attr(chk$sumstats, "yssq"), attr(ss1, "yssq") + attr(ss2, "yssq"))
 })
 

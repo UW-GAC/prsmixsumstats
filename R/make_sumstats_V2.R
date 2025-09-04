@@ -11,6 +11,7 @@
 #' returns a sumstats object, which contains two list elements:
 #' 1. matrix of x'x where x is nxp design matrix
 #' 2. vector of x'y where y is nx1 trait vector
+#' attributes of the sumstats object: nsubj, nmiss, nobs, colsum, ysum, yssq
 #'
 #' @param x design matrix with rows as individual observations
 #' @param y vector with outcomes, length should match nrow(x)

@@ -1,4 +1,3 @@
-#' @importFrom stats setNames
 match_sumstats <- function(sumstats) {
   cols <- lapply(sumstats, function(x) colnames(x$xx))
   cols_intersect <- cols[[1]]
@@ -28,6 +27,7 @@ match_cols_sumstats <- function(ss, col_names) {
 }
 
 
+#' @importFrom stats setNames
 add_cols_sumstats <- function(ss, col_names) {
   tmp <- ss
   tmp$xx <- add_cols_square_matrix(ss$xx, col_names)

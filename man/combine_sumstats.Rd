@@ -10,8 +10,15 @@ combine_sumstats(sumstats)
 \item{sumstats}{list of sumstats objects}
 }
 \value{
-sumstats object that results from summing over the elements of the input list, with additional attributes 'yvar' and 'beta_multiplier'
+list of 1. sumstats object, 2. yvar (which should be 1), 
+3. beta_multiplier, 4. list of columns with incomplete data (missing in at least
+one list element)
 }
 \description{
-Combine summary statistics
+Combines summary statistics, centers and scales
+}
+\details{
+Summary statistics in the input list are summed. Columns that are present 
+in one list element but not others are set to zero when computing the sum.
+The resules are centered and scaled and divdided by the number of observations.
 }
