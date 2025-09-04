@@ -55,8 +55,7 @@ make_varxy <- function(xx, xy, yssq){
 #' Fit an elastic net model based on summary statistics for specified
 #' penalty parameters alpha and lambda
 #'
-#' @param xx matrix of x'x where x is nxp design matrix
-#' @param xy vector of x'y where y is nx1 trait vector
+#' @param sumstats object with elements xx: matrix of x'x where x is nxp design matrix, xy: vector of x'y where y is nx1 trait vector
 #' @param beta_init is px1 vector of starting values
 #' @param alpha (range 0-1) is fraction of penalty for L1 penalty
 #' and (1-alpha) is fraction for L2 penalty
@@ -72,10 +71,10 @@ make_varxy <- function(xx, xy, yssq){
 #' Note that larger values of f.adj cause more iterations.
 #' See Yang, Y., & Zou, H. (2012). A coordinate majorization descent algorithm for L1 penalized learning.
 #' Journal of Statistical Computation and Simulation, 84(1), 84–95. https://doi.org/10.1080/00949655.2012.695374
-#' @param verbose prints summary results at each interation if verbose=TRUE
+#' @param verbose prints summary results at each iteration if verbose=TRUE
 #' @details
 #' Cyclic coordinate descent is used to fit an elastic net model based on minimizing penalized least squared.
-#' @returns list with fitted beta, number of iterations, convegence (true/false), and input penalty parameters
+#' @returns list with fitted beta, number of iterations, convergence (true/false), and input penalty parameters
 #' alpha and lambda
 #' @author Dan Schaid (schaid@mayo.edu)
 #' @export
@@ -214,7 +213,7 @@ gradient <- function(index, beta, xx, xy, alpha, lambda_pen){
 #' @importFrom stats pnorm
 auc_glmnet_sumstats <- function(beta, xx, vary, ncase, ncont){
   ssr <- t(beta) %*% xx %*% beta
-  #sst <- vary * nsubj
+  sst <- vary #* nsubj
   r2 <- ssr/sst
   a <- (ncase + ncont)^2/(ncase * ncont)
   d <- sqrt(a*r2)/sqrt(1-r2)
