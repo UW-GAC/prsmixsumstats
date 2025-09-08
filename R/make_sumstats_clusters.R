@@ -27,13 +27,17 @@ make_sumstats_clusters <- function(trait, covariates, scores, clusters, trait_na
   miss <- sapply(covariates, function(x) sum(is.na(x)) == length(x))
   dropped <- names(covariates)[miss]
   covariates <- covariates[,!miss]
-  warning("dropped the following covariates as all values are missing: ", paste(dropped, collapse=", "))
-    
+  if (length(dropped) > 0) {
+      warning("dropped the following covariates as all values are missing: ", paste(dropped, collapse=", "))
+  }
+  
   # filter any scores that are all missing
   miss <- sapply(scores, function(x) sum(is.na(x)) == length(x))
   dropped <- names(scores)[miss]
   scores <- scores[,!miss]
-  message("dropped the following scores as all values are missing: ", paste(dropped, collapse=", "))
+  if (length(dropped) > 0) {
+      message("dropped the following scores as all values are missing: ", paste(dropped, collapse=", "))
+  }
   
   # filter any rows with missing data
   is.miss <- apply(is.na(trait), 1, any)
