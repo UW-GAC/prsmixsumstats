@@ -1,6 +1,13 @@
-#' make summary stats for each cluster
-
-#' each input is expected to be a data table where the first column is sample ID
+#' Make summary stats for each cluster
+#' 
+#' Make summary stats for each cluster
+#'
+#' Each input is expected to be a data table where the first column is sample ID.
+#' Scores with all missing values will be dropped with a message.
+#' Covariates with all missing values will be dropped with a warning.
+#' After applying the above filters, rows with any missing values will be dropped before
+#' calculating the summary statistics.
+#' 
 #' this function writes an output file with a sumstats object for:
 #' 1. all samples together
 #' 2. each cluster with size > min_cluster_size
@@ -15,6 +22,27 @@
 #' @export
 make_sumstats_clusters <- function(trait, covariates, scores, clusters, trait_name, cohort_name,
                                    min_cluster_size = 20) {
+    
+  # filter any covariates that are all missing
+  miss <- sapply(covariates, function(x) sum(is.na(x)) == length(x))
+  dropped <- names(covariates)[miss]
+  covariates <- covariates[,!miss]
+  warning("dropped the following covariates as all values are missing: ", paste(dropped, collapse=", "))
+    
+  # filter any scores that are all missing
+  miss <- sapply(scores, function(x) sum(is.na(x)) == length(x))
+  dropped <- names(scores)[miss]
+  scores <- scores[,!miss]
+  message("dropped the following scores as all values are missing: ", paste(dropped, collapse=", "))
+  
+  # filter any rows with missing data
+  is.miss <- apply(is.na(trait), 1, any)
+  trait <- trait[!is.miss,,drop=FALSE]
+  is.miss <- apply(is.na(covariates), 1, any)
+  covariates <- covariates[!is.miss,,drop=FALSE]
+  is.miss <- apply(is.na(scores), 1, any)
+  scores <- scores[!is.miss,,drop=FALSE]
+    
   ids <- intersect(trait[[1]], covariates[[1]])
   ids <- intersect(ids, scores[[1]])
   ids <- intersect(ids, clusters[[1]])
@@ -25,6 +53,7 @@ make_sumstats_clusters <- function(trait, covariates, scores, clusters, trait_na
   stopifnot(all(trait[[1]] == covariates[[1]]))
   stopifnot(all(trait[[1]] == scores[[1]]))
   stopifnot(all(trait[[1]] == clusters[[1]]))
+  message(nrow(trait), " observations with complete data")
   
   cov_scores <- cbind(covariates, scores[,-1])
   rm(scores)

@@ -2,11 +2,7 @@
 % Please edit documentation in R/make_sumstats_clusters.R
 \name{make_sumstats_clusters}
 \alias{make_sumstats_clusters}
-\title{make summary stats for each cluster
-each input is expected to be a data table where the first column is sample ID
-this function writes an output file with a sumstats object for:
-1. all samples together
-2. each cluster with size > min_cluster_size}
+\title{Make summary stats for each cluster}
 \usage{
 make_sumstats_clusters(
   trait,
@@ -34,8 +30,15 @@ make_sumstats_clusters(
 \item{min_cluster_size}{minimum size for a cluster to have an output file}
 }
 \description{
-make summary stats for each cluster
-each input is expected to be a data table where the first column is sample ID
+Make summary stats for each cluster
+}
+\details{
+Each input is expected to be a data table where the first column is sample ID.
+Scores with all missing values will be dropped with a message.
+Covariates with all missing values will be dropped with a warning.
+After applying the above filters, rows with any missing values will be dropped before
+calculating the summary statistics.
+
 this function writes an output file with a sumstats object for:
 1. all samples together
 2. each cluster with size > min_cluster_size
