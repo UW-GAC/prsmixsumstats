@@ -55,6 +55,17 @@ test_that("only one cluster", {
 })
 
 
+test_that("make_sumstats_clusters - missing data", {
+    dat <- .example_cluster_data_missing_cols(n=100, nprs=1000)
+    expect_message(expect_warning(make_sumstats_clusters(dat$trait, dat$covariates, dat$scores, dat$clusters, "pheno", "cohort"), "dropped the following covariates as all values are missing: cov2"), "dropped the following scores as all values are missing: PRS001")
+    all <- readRDS("pheno_cohort_sumstats.rds")
+    expect_equal(attr(all, "nobs"), 98)
+    expect_equal(attr(all, "nmiss"), 0)
+    expect_true(sum(attr(all, "colsum")) > 0)
+    file.remove(paste0("pheno_cohort", c("", "_cluster1", "_cluster2"), "_sumstats.rds"))
+})
+
+
 test_that("add_cols_square_matrix", {
     x <- matrix(1, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
     col_names <- c("d", "e")

@@ -32,6 +32,21 @@
 }
 
 
+.example_cluster_data_missing_cols <- function(n=100, nprs=1000) {
+    dat <- sim_test_dat(n, nprs)
+    id <- as.character(1:n)
+    trait <- data.frame(id, pheno=dat$y)
+    covariates <- cbind(id, as.data.frame(dat$x[,1:4]))
+    scores <- cbind(id, as.data.frame(dat$x[,5:(4+nprs)]))
+    scores[[2]] <- NA
+    covariates[[5]] <- NA
+    covariates[2,3] <- NA
+    trait[3,2] <- NA
+    clusters <- data.frame(id, cluster=c(rep(1,ceiling(2*n/3)), rep(2,floor(n/3))))
+    return(list(trait=trait, covariates=covariates, scores=scores, clusters=clusters))
+}
+
+
 .example_data_diffprs <- function(n1=100, n2=100, nprs1=1000, nprs2=1050) {
     dat1 <- sim_test_dat(n1, nprs1, prev=.1, beta.sd=2)
     dat2 <- sim_test_dat(n2, nprs2, prev=.1, beta.sd=2)
