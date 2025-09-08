@@ -165,3 +165,9 @@ test_that("combine_matched_sumstats", {
     #expect_equal(attr(chk$sumstats, "yssq"), attr(ss1, "yssq") + attr(ss2, "yssq"))
 })
 
+
+test_that("filter_sumstats", {
+    dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
+    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
+    overlap <- .example_filter_data(nprs=1000)
+})

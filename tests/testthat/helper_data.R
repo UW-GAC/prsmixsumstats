@@ -37,3 +37,11 @@
     dat2 <- sim_test_dat(n2, nprs2, prev=.1, beta.sd=2)
     return(list(dat1, dat2))
 }
+
+
+.example_filter_data <- function(nprs=1000) {
+    data.frame(
+        score = paste0("PRS00", 1:nprs),
+        overlap = runif(nprs, min=0, max=1)
+    )    
+}
