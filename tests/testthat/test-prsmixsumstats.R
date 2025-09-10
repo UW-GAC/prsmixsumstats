@@ -146,6 +146,17 @@ test_that("match_sumstats identical", {
 })
 
 
+test_that("match_sumstats single", {
+    xx1 <- matrix(rep(1:3, 3), byrow=TRUE, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
+    xy1 <- matrix(1:3, byrow=TRUE, nrow=3, ncol=1, dimnames=list(letters[1:3], NULL))
+    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(xx1))
+    ss <- list(ss1)
+    chk <- match_sumstats(ss)
+    expect_equal(chk$sumstats, ss)
+    expect_equal(chk$incomplete_cols, character())
+})
+
+
 test_that("match_sumstats big", {
     dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
     ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
@@ -174,6 +185,17 @@ test_that("combine_matched_sumstats", {
     expect_equal(attr(chk$sumstats, "ysum"), attr(ss1, "ysum") + attr(ss2, "ysum"))
     # not this is not true because yssq was set to yssq - ysum^2/nobs
     #expect_equal(attr(chk$sumstats, "yssq"), attr(ss1, "yssq") + attr(ss2, "yssq"))
+})
+
+
+test_that("combine just one sumstats", {
+    dat <- .example_data_diffprs(n1=100, n2=50, nprs1=1000, nprs2=1050)
+    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
+    ss <- list(ss1)
+    chk <- combine_sumstats(ss)
+    expect_equal(ncol(chk$sumstats$xx), 1004)
+    expect_equal(attr(chk$sumstats, "nsubj"), 100)
+    expect_equal(length(chk$incomplete_cols), 0)
 })
 
 

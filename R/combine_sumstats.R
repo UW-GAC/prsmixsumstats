@@ -28,15 +28,17 @@ combine_sumstats <- function(sumstats){
   ysum <- attr(sumstats[[1]], "ysum")
   yssq <- attr(sumstats[[1]], "yssq")
   
-  for(index in 2:ngroups){
-    xx <- xx + sumstats[[index]]$xx
-    xy <- xy + sumstats[[index]]$xy
-    nsubj <- nsubj + attr(sumstats[[index]], "nsubj")
-    nmiss <- nmiss + attr(sumstats[[index]], "nmiss")
-    nobs <- nobs + attr(sumstats[[index]], "nobs")
-    colsum <- colsum + attr(sumstats[[index]], "colsum")  
-    ysum <- ysum + attr(sumstats[[index]], "ysum")
-    yssq <- yssq + attr(sumstats[[index]], "yssq")
+  if (ngroups > 1) {
+      for(index in 2:ngroups){
+        xx <- xx + sumstats[[index]]$xx
+        xy <- xy + sumstats[[index]]$xy
+        nsubj <- nsubj + attr(sumstats[[index]], "nsubj")
+        nmiss <- nmiss + attr(sumstats[[index]], "nmiss")
+        nobs <- nobs + attr(sumstats[[index]], "nobs")
+        colsum <- colsum + attr(sumstats[[index]], "colsum")  
+        ysum <- ysum + attr(sumstats[[index]], "ysum")
+        yssq <- yssq + attr(sumstats[[index]], "yssq")
+      }
   }
   
   ## center and scale xx
