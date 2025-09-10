@@ -1,4 +1,7 @@
 match_sumstats <- function(sumstats) {
+  if (length(sumstats) == 1) {
+      return(list(sumstats=sumstats, incomplete_cols=character()))
+  }
   cols <- lapply(sumstats, function(x) colnames(x$xx))
   cols_intersect <- cols[[1]]
   cols_union <- cols[[1]]

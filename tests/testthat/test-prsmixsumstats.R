@@ -146,6 +146,17 @@ test_that("match_sumstats identical", {
 })
 
 
+test_that("match_sumstats single", {
+    xx1 <- matrix(rep(1:3, 3), byrow=TRUE, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
+    xy1 <- matrix(1:3, byrow=TRUE, nrow=3, ncol=1, dimnames=list(letters[1:3], NULL))
+    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(xx1))
+    ss <- list(ss1)
+    chk <- match_sumstats(ss)
+    expect_equal(chk$sumstats, ss)
+    expect_equal(chk$incomplete_cols, character())
+})
+
+
 test_that("match_sumstats big", {
     dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
     ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
@@ -176,3 +187,25 @@ test_that("combine_matched_sumstats", {
     #expect_equal(attr(chk$sumstats, "yssq"), attr(ss1, "yssq") + attr(ss2, "yssq"))
 })
 
+
+test_that("combine just one sumstats", {
+    dat <- .example_data_diffprs(n1=100, n2=50, nprs1=1000, nprs2=1050)
+    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
+    ss <- list(ss1)
+    chk <- combine_sumstats(ss)
+    expect_equal(ncol(chk$sumstats$xx), 1004)
+    expect_equal(attr(chk$sumstats, "nsubj"), 100)
+    expect_equal(length(chk$incomplete_cols), 0)
+})
+
+
+test_that("filter_sumstats", {
+    dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
+    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
+    overlap <- .example_filter_data(nprs=1000)
+    chk <- filter_sumstats(ss1, overlap, filter_col="overlap", name_col="score", filter_threshold=0.5)
+    expect_true(ncol(chk$xx) < ncol(ss1$xx))
+    expect_true(length(chk$xy) < length(ss1$xy))
+    expect_true(ncol(chk$xx) > 0)
+    expect_true(length(chk$xy) > 0)
+})
