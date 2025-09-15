@@ -29,7 +29,7 @@ make_sumstats <- function(x, y, center=TRUE){
   }
 
   nsubj <- nrow(x)
-  is.miss.x <- apply(is.na(x), 1, any)
+  is.miss.x <- rowSums(is.na(x)) > 0
   is.miss.y <-  is.na(y)
   is.miss <- is.miss.x | is.miss.y
   nmiss <- sum(is.miss)
