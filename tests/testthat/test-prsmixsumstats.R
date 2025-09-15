@@ -22,6 +22,8 @@ test_that("make_sumstats centered", {
     sy <- scale(dat$y, scale=FALSE)
     expect_equal(ss1$xx, t(sx) %*% sx)
     expect_equal(ss1$xy, t(sx) %*% sy)
+    expect_equal(attr(ss1, "colsum"), colSums(dat$x))
+    expect_equal(attr(ss1, "ysum"), sum(dat$y))
     expect_equal(attr(ss1, "yssq"), sum(sy^2))
     expect_true(attr(ss1, "centered"))
 })
@@ -53,7 +55,7 @@ test_that("combine_sumstats", {
 })
 
 
-test_that("combine_sumstats_centered", {
+test_that("combine_sumstats centered", {
     dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
     ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
     ss2 <- make_sumstats(dat[[2]]$x, dat[[2]]$y)
