@@ -10,7 +10,7 @@ combine_sumstats(sumstats)
 \item{sumstats}{list of sumstats objects}
 }
 \value{
-list of 1. sumstats object, 2. yvar (which should be 1), 
+list of 1. sumstats object, 2. yvar (which should be 1),
 3. beta_multiplier, 4. list of columns with incomplete data (missing in at least
 one list element)
 }
@@ -18,7 +18,9 @@ one list element)
 Combines summary statistics, centers and scales
 }
 \details{
-Summary statistics in the input list are summed. Columns that are present 
+Summary statistics in the input list are summed. Columns that are present
 in one list element but not others are set to zero when computing the sum.
-The resules are centered and scaled and divdided by the number of observations.
+The results are centered and scaled and divdided by the number of observations.
+
+Use this function with the results of \code{\link{make_sumstats}}.
 }

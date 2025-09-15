@@ -1,26 +1,43 @@
 test_that("make_sumstats", {
     dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
-    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
+    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y, center=FALSE)
     validate_sumstats(ss1)
     expect_equal(dim(ss1$xx), c(1004,1004))
     expect_equal(dim(ss1$xy), c(1004,1))
     expect_equal(attr(ss1, "nsubj"), 100)
     expect_equal(attr(ss1, "nmiss"), 18)
+    expect_false(attr(ss1, "centered"))
 })
 
 
 test_that("make_sumstats_center", {
     dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
-    ss1 <- make_sumstats_center(dat[[1]]$x, dat[[1]]$y)
+    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y, center=TRUE)
     validate_sumstats(ss1)
     expect_equal(dim(ss1$xx), c(1004,1004))
     expect_equal(dim(ss1$xy), c(1004,1))
     expect_equal(attr(ss1, "nsubj"), 100)
     expect_equal(attr(ss1, "nmiss"), 18)
+    expect_true(attr(ss1, "centered"))
 })
 
 
 test_that("combine_sumstats", {
+    dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
+    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y, center=FALSE)
+    ss2 <- make_sumstats(dat[[2]]$x, dat[[2]]$y, center=FALSE)
+    ss3 <- make_sumstats(dat[[3]]$x, dat[[3]]$y, center=FALSE)
+    chk <- combine_sumstats(list(ss1, ss2, ss3))
+    ss <- chk$sumstats
+    expect_equal(dim(ss1$xx), c(1004,1004))
+    expect_equal(dim(ss1$xy), c(1004,1))
+    expect_equal(attr(ss, "nsubj"), 180)
+    expect_equal(unname(diag(ss$xx)), rep(1, 1004))
+    expect_true(attr(ss1, "centered"))
+})
+
+
+test_that("combine_sumstats_centered", {
     dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
     ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
     ss2 <- make_sumstats(dat[[2]]$x, dat[[2]]$y)
@@ -30,6 +47,16 @@ test_that("combine_sumstats", {
     expect_equal(dim(ss1$xx), c(1004,1004))
     expect_equal(dim(ss1$xy), c(1004,1))
     expect_equal(attr(ss, "nsubj"), 180)
+    expect_equal(unname(diag(ss$xx)), rep(1, 1004))
+    expect_true(attr(ss1, "centered"))
+})
+
+
+test_that("combine_sumstats err", {
+    dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
+    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y, center=TRUE)
+    ss2 <- make_sumstats(dat[[2]]$x, dat[[2]]$y, center=FALSE)
+    expect_error(combine_sumstats(list(ss1, ss2)))
 })
 
 
@@ -40,7 +67,8 @@ test_that("make_sumstats_clusters", {
     c1 <- readRDS("pheno_cohort_cluster1_sumstats.rds")
     c2 <- readRDS("pheno_cohort_cluster2_sumstats.rds")
     expect_equal(attr(all, "nsubj"), 80)
-    expect_true(all(abs(all$xy - (c1$xy + c2$xy)) < 1e-7))
+    #only true when using make_sumstats and combine_sumstats, not centered versions
+    #expect_true(all(abs(all$xy - (c1$xy + c2$xy)) < 1e-7))
     file.remove(paste0("pheno_cohort", c("", "_cluster1", "_cluster2"), "_sumstats.rds"))
 })
 
