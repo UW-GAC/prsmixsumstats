@@ -40,7 +40,8 @@ make_sumstats <- function(x, y, center=TRUE){
   if (center) {
     x <- scale(x, scale=FALSE)
   }
-  xx <- (t(x) %*% x)
+  #xx <- (t(x) %*% x)
+  xx <- crossprod(x)
   rownames(xx) <- xcol.names
   colnames(xx) <- xcol.names
 
