@@ -1,6 +1,22 @@
-## summary stat functions for glmnet with summary stats
-
-make_sumstats_center <- function(x, y){
+#' Make summary statistics
+#' 
+#' From input design matrix x and outcome vector y, compute x'x and x'y
+#'
+#' important: x and y must have the same number of subjects
+#' and ordered the same way according to subject ID, but ID 
+#' should not be a column of X
+#' 
+#' returns a sumstats object, which contains two list elements:
+#' 1. matrix of x'x where x is nxp design matrix
+#' 2. vector of x'y where y is nx1 trait vector
+#' attributes of the sumstats object: nsubj, nmiss, nobs, colsum, ysum, yssq
+#'
+#' @param x design matrix with rows as individual observations
+#' @param y vector with outcomes, length should match nrow(x)
+#' @param center boolean for whether to center and scale x and y
+#' @return sumstats object with elements xx and xy 
+#' @export
+make_sumstats <- function(x, y, center=TRUE){
   ## important: x and y must have the same number of subjects
   ## and ordered the same way according to subject ID, but ID
   ## should not be a column of X
@@ -13,27 +29,33 @@ make_sumstats_center <- function(x, y){
   }
 
   nsubj <- nrow(x)
-  is.miss.x <- apply(is.na(x), 1, any)
+  is.miss.x <- rowSums(is.na(x)) > 0
   is.miss.y <-  is.na(y)
   is.miss <- is.miss.x | is.miss.y
-  z <- scale(x[!is.miss, ], scale=FALSE)
-  xx <- (t(z) %*% z)
+  nmiss <- sum(is.miss)
+  nobs <- nsubj - nmiss
+
+  x <- x[!is.miss, , drop=FALSE]
+  csum <- colSums(x)
+  if (center) {
+    x <- scale(x, scale=FALSE)
+  }
+  #xx <- (t(x) %*% x)
+  xx <- crossprod(x)
   rownames(xx) <- xcol.names
   colnames(xx) <- xcol.names
 
   y <- y[!is.miss]
   ysum <- sum(y, na.rm=TRUE)
-  y <- scale(y, scale=FALSE)
-  xy <- t(z) %*% y
+  if (center) {
+    y <- scale(y, scale=FALSE)
+  }
+  xy <- t(x) %*% y
   #names(xy) <-  xcol.names
-
-  nmiss <- sum(is.miss)
-  nobs <- nsubj - nmiss
-  csum <- colSums(x)
 
   yssq <- sum(y^2, na.rm=TRUE)
   
-  ss <- new_sumstats(xx, xy, nsubj, nmiss, nobs, csum, ysum, yssq)
+  ss <- new_sumstats(xx, xy, nsubj, nmiss, nobs, csum, ysum, yssq, centered=center)
 
   return(ss)
 }
@@ -241,9 +263,11 @@ auc_glmnet_sumstats <- function(beta, xx, vary, ncase, ncont){
 #' @param nprs number of PRS
 #' @param prev prev
 #' @param beta.sd beta.sd
+#' @param seed seed
 #' @importFrom stats rbinom rnorm runif
 #' @export
-sim_test_dat <- function(nsubj, nprs, prev=.1, beta.sd=2){
+sim_test_dat <- function(nsubj, nprs, prev=.1, beta.sd=2, seed=42){
+  set.seed(seed)
  ## large beta.sd allows larger beta's
   sex <-  rbinom(nsubj,size=1,prob=.5)
   age <- round(runif(nsubj, min=40, max=70),0)

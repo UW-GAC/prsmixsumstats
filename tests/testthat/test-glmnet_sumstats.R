@@ -1,6 +1,6 @@
 test_that("glmnet_sumstats", {
     dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
-    ss <- make_sumstats_center(dat[[1]]$x, dat[[1]]$y)
+    ss <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
     fit_sumstats <-  glmnet_sumstats(ss, beta_init=rep(0, 1004), alpha=0.5, lambda=0.5, 
                                      penalty_factor=rep(1, 1004), maxiter=10, 
                                      tol=1e-7, f.adj=2.0, verbose=FALSE)

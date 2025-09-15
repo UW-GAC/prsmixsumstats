@@ -1,17 +1,37 @@
 test_that("make_sumstats", {
-    dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
-    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
+    dat <- sim_test_dat(100, 1000, prev=.1, beta.sd=2)
+    ss1 <- make_sumstats(dat$x, dat$y, center=FALSE)
     validate_sumstats(ss1)
-    expect_equal(dim(ss1$xx), c(1004,1004))
-    expect_equal(dim(ss1$xy), c(1004,1))
+    expect_equal(ss1$xx, t(dat$x) %*% dat$x)
+    expect_equal(ss1$xy, t(dat$x) %*% dat$y)
     expect_equal(attr(ss1, "nsubj"), 100)
-    expect_equal(attr(ss1, "nmiss"), 18)
+    expect_equal(attr(ss1, "nmiss"), 0)
+    expect_equal(attr(ss1, "nobs"), 100)
+    expect_equal(attr(ss1, "colsum"), colSums(dat$x))
+    expect_equal(attr(ss1, "ysum"), sum(dat$y))
+    expect_equal(attr(ss1, "yssq"), sum(dat$y^2))
+    expect_false(attr(ss1, "centered"))
 })
 
 
-test_that("make_sumstats_center", {
+test_that("make_sumstats centered", {
+    dat <- sim_test_dat(100, 1000, prev=.1, beta.sd=2)
+    ss1 <- make_sumstats(dat$x, dat$y, center=TRUE)
+    validate_sumstats(ss1)
+    sx <- scale(dat$x, scale=FALSE)
+    sy <- scale(dat$y, scale=FALSE)
+    expect_equal(ss1$xx, t(sx) %*% sx)
+    expect_equal(ss1$xy, t(sx) %*% sy)
+    expect_equal(attr(ss1, "colsum"), colSums(dat$x))
+    expect_equal(attr(ss1, "ysum"), sum(dat$y))
+    expect_equal(attr(ss1, "yssq"), sum(sy^2))
+    expect_true(attr(ss1, "centered"))
+})
+
+
+test_that("make_sumstats missing data", {
     dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
-    ss1 <- make_sumstats_center(dat[[1]]$x, dat[[1]]$y)
+    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
     validate_sumstats(ss1)
     expect_equal(dim(ss1$xx), c(1004,1004))
     expect_equal(dim(ss1$xy), c(1004,1))
@@ -22,6 +42,21 @@ test_that("make_sumstats_center", {
 
 test_that("combine_sumstats", {
     dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
+    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y, center=FALSE)
+    ss2 <- make_sumstats(dat[[2]]$x, dat[[2]]$y, center=FALSE)
+    ss3 <- make_sumstats(dat[[3]]$x, dat[[3]]$y, center=FALSE)
+    chk <- combine_sumstats(list(ss1, ss2, ss3))
+    ss <- chk$sumstats
+    expect_equal(dim(ss1$xx), c(1004,1004))
+    expect_equal(dim(ss1$xy), c(1004,1))
+    expect_equal(attr(ss, "nsubj"), 180)
+    expect_equal(unname(diag(ss$xx)), rep(1, 1004))
+    expect_false(attr(ss1, "centered"))
+})
+
+
+test_that("combine_sumstats centered", {
+    dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
     ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
     ss2 <- make_sumstats(dat[[2]]$x, dat[[2]]$y)
     ss3 <- make_sumstats(dat[[3]]$x, dat[[3]]$y)
@@ -30,6 +65,16 @@ test_that("combine_sumstats", {
     expect_equal(dim(ss1$xx), c(1004,1004))
     expect_equal(dim(ss1$xy), c(1004,1))
     expect_equal(attr(ss, "nsubj"), 180)
+    expect_equal(unname(diag(ss$xx)), rep(1, 1004))
+    expect_true(attr(ss1, "centered"))
+})
+
+
+test_that("combine_sumstats err", {
+    dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
+    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y, center=TRUE)
+    ss2 <- make_sumstats(dat[[2]]$x, dat[[2]]$y, center=FALSE)
+    expect_error(combine_sumstats(list(ss1, ss2)))
 })
 
 
@@ -40,7 +85,8 @@ test_that("make_sumstats_clusters", {
     c1 <- readRDS("pheno_cohort_cluster1_sumstats.rds")
     c2 <- readRDS("pheno_cohort_cluster2_sumstats.rds")
     expect_equal(attr(all, "nsubj"), 80)
-    expect_true(all(abs(all$xy - (c1$xy + c2$xy)) < 1e-7))
+    #only true when using make_sumstats with center=FALSE
+    #expect_true(all(abs(all$xy - (c1$xy + c2$xy)) < 1e-7))
     file.remove(paste0("pheno_cohort", c("", "_cluster1", "_cluster2"), "_sumstats.rds"))
 })
 
@@ -125,12 +171,12 @@ test_that("match_sumstats", {
                     dimnames=list(letters[1:5], letters[1:5]))
     expy2 <- matrix(c(rep(0, 2), 3:5), nrow=5, ncol=1, dimnames=list(letters[1:5], NULL))
     exps2 <- setNames(c(0,0,9,12,15), letters[1:5])
-    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(xx1))
-    ss2 <- structure(list(xx=xx2, xy=xy2), colsum=colSums(xx2))
+    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(xx1), centered=FALSE)
+    ss2 <- structure(list(xx=xx2, xy=xy2), colsum=colSums(xx2), centered=FALSE)
     chk <- match_sumstats(list(ss1, ss2))
     expect_equal(chk$sumstats, list(
-        structure(list(xx=expx1, xy=expy1), colsum=exps1), 
-        structure(list(xx=expx2, xy=expy2), colsum=exps2)
+        structure(list(xx=expx1, xy=expy1), colsum=exps1, centered=FALSE), 
+        structure(list(xx=expx2, xy=expy2), colsum=exps2, centered=FALSE)
         ))
 })
 
@@ -138,7 +184,7 @@ test_that("match_sumstats", {
 test_that("match_sumstats identical", {
     xx1 <- matrix(rep(1:3, 3), byrow=TRUE, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
     xy1 <- matrix(1:3, byrow=TRUE, nrow=3, ncol=1, dimnames=list(letters[1:3], NULL))
-    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(xx1))
+    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(xx1), centered=FALSE)
     ss <- list(ss1, ss1)
     chk <- match_sumstats(ss)
     expect_equal(chk$sumstats, ss)
@@ -149,7 +195,7 @@ test_that("match_sumstats identical", {
 test_that("match_sumstats single", {
     xx1 <- matrix(rep(1:3, 3), byrow=TRUE, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
     xy1 <- matrix(1:3, byrow=TRUE, nrow=3, ncol=1, dimnames=list(letters[1:3], NULL))
-    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(xx1))
+    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(xx1), centered=FALSE)
     ss <- list(ss1)
     chk <- match_sumstats(ss)
     expect_equal(chk$sumstats, ss)
@@ -183,8 +229,7 @@ test_that("combine_matched_sumstats", {
     expect_equal(attr(chk$sumstats, "colsum")[1:1004], attr(ss1, "colsum")[1:1004] + attr(ss2, "colsum")[1:1004])
     expect_equal(attr(chk$sumstats, "colsum")[1005:1054], attr(ss2, "colsum")[1005:1054])
     expect_equal(attr(chk$sumstats, "ysum"), attr(ss1, "ysum") + attr(ss2, "ysum"))
-    # not this is not true because yssq was set to yssq - ysum^2/nobs
-    #expect_equal(attr(chk$sumstats, "yssq"), attr(ss1, "yssq") + attr(ss2, "yssq"))
+    expect_equal(attr(chk$sumstats, "yssq"), attr(ss1, "yssq") + attr(ss2, "yssq"))
 })
 
 
