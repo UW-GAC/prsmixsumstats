@@ -33,7 +33,7 @@ test_that("combine_sumstats", {
     expect_equal(dim(ss1$xy), c(1004,1))
     expect_equal(attr(ss, "nsubj"), 180)
     expect_equal(unname(diag(ss$xx)), rep(1, 1004))
-    expect_true(attr(ss1, "centered"))
+    expect_false(attr(ss1, "centered"))
 })
 
 
@@ -153,12 +153,12 @@ test_that("match_sumstats", {
                     dimnames=list(letters[1:5], letters[1:5]))
     expy2 <- matrix(c(rep(0, 2), 3:5), nrow=5, ncol=1, dimnames=list(letters[1:5], NULL))
     exps2 <- setNames(c(0,0,9,12,15), letters[1:5])
-    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(xx1))
-    ss2 <- structure(list(xx=xx2, xy=xy2), colsum=colSums(xx2))
+    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(xx1), centered=FALSE)
+    ss2 <- structure(list(xx=xx2, xy=xy2), colsum=colSums(xx2), centered=FALSE)
     chk <- match_sumstats(list(ss1, ss2))
     expect_equal(chk$sumstats, list(
-        structure(list(xx=expx1, xy=expy1), colsum=exps1), 
-        structure(list(xx=expx2, xy=expy2), colsum=exps2)
+        structure(list(xx=expx1, xy=expy1), colsum=exps1, centered=FALSE), 
+        structure(list(xx=expx2, xy=expy2), colsum=exps2, centered=FALSE)
         ))
 })
 
@@ -166,7 +166,7 @@ test_that("match_sumstats", {
 test_that("match_sumstats identical", {
     xx1 <- matrix(rep(1:3, 3), byrow=TRUE, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
     xy1 <- matrix(1:3, byrow=TRUE, nrow=3, ncol=1, dimnames=list(letters[1:3], NULL))
-    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(xx1))
+    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(xx1), centered=FALSE)
     ss <- list(ss1, ss1)
     chk <- match_sumstats(ss)
     expect_equal(chk$sumstats, ss)
@@ -177,7 +177,7 @@ test_that("match_sumstats identical", {
 test_that("match_sumstats single", {
     xx1 <- matrix(rep(1:3, 3), byrow=TRUE, nrow=3, ncol=3, dimnames=list(letters[1:3], letters[1:3]))
     xy1 <- matrix(1:3, byrow=TRUE, nrow=3, ncol=1, dimnames=list(letters[1:3], NULL))
-    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(xx1))
+    ss1 <- structure(list(xx=xx1, xy=xy1), colsum=colSums(xx1), centered=FALSE)
     ss <- list(ss1)
     chk <- match_sumstats(ss)
     expect_equal(chk$sumstats, ss)
