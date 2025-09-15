@@ -265,7 +265,8 @@ auc_glmnet_sumstats <- function(beta, xx, vary, ncase, ncont){
 #' @param beta.sd beta.sd
 #' @importFrom stats rbinom rnorm runif
 #' @export
-sim_test_dat <- function(nsubj, nprs, prev=.1, beta.sd=2){
+sim_test_dat <- function(nsubj, nprs, prev=.1, beta.sd=2, seed=42){
+  set.seed(seed)
  ## large beta.sd allows larger beta's
   sex <-  rbinom(nsubj,size=1,prob=.5)
   age <- round(runif(nsubj, min=40, max=70),0)
