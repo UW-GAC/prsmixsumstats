@@ -20,7 +20,9 @@ Combines summary statistics, centers and scales
 \details{
 Summary statistics in the input list are summed. Columns that are present
 in one list element but not others are set to zero when computing the sum.
-The results are centered and scaled and divdided by the number of observations.
+The results are centered and scaled and divided by the number of observations.
+If the sumstats objects provided are not already centered, centering is done
+in this function.
 
 Use this function with the results of \code{\link{make_sumstats}}.
 }

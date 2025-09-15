@@ -263,6 +263,7 @@ auc_glmnet_sumstats <- function(beta, xx, vary, ncase, ncont){
 #' @param nprs number of PRS
 #' @param prev prev
 #' @param beta.sd beta.sd
+#' @param seed seed
 #' @importFrom stats rbinom rnorm runif
 #' @export
 sim_test_dat <- function(nsubj, nprs, prev=.1, beta.sd=2, seed=42){

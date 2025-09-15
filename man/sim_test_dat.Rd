@@ -4,7 +4,7 @@
 \alias{sim_test_dat}
 \title{Simulate example data}
 \usage{
-sim_test_dat(nsubj, nprs, prev = 0.1, beta.sd = 2)
+sim_test_dat(nsubj, nprs, prev = 0.1, beta.sd = 2, seed = 42)
 }
 \arguments{
 \item{nsubj}{number of subjects}
@@ -14,6 +14,8 @@ sim_test_dat(nsubj, nprs, prev = 0.1, beta.sd = 2)
 \item{prev}{prev}
 
 \item{beta.sd}{beta.sd}
+
+\item{seed}{seed}
 }
 \description{
 Simulate example data
