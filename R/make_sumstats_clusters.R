@@ -24,7 +24,7 @@ make_sumstats_clusters <- function(trait, covariates, scores, clusters, trait_na
                                    min_cluster_size = 20) {
     
   # filter any covariates that are all missing
-  miss <- sapply(covariates, function(x) sum(is.na(x)) == length(x))
+  miss <- sapply(covariates, function(x) all(is.na(x)))
   dropped <- names(covariates)[miss]
   covariates <- covariates[,!miss]
   if (length(dropped) > 0) {
@@ -32,7 +32,7 @@ make_sumstats_clusters <- function(trait, covariates, scores, clusters, trait_na
   }
   
   # filter any scores that are all missing
-  miss <- sapply(scores, function(x) sum(is.na(x)) == length(x))
+  miss <- sapply(scores, function(x) all(is.na(x)))
   dropped <- names(scores)[miss]
   scores <- scores[,!miss]
   if (length(dropped) > 0) {
@@ -46,6 +46,11 @@ make_sumstats_clusters <- function(trait, covariates, scores, clusters, trait_na
   covariates <- covariates[!is.miss,,drop=FALSE]
   is.miss <- apply(is.na(scores), 1, any)
   scores <- scores[!is.miss,,drop=FALSE]
+  
+  # check for missing data in clusters
+  if (any(is.na(clusters))) {
+      warning("missing data in clusters")
+  }
     
   ids <- intersect(trait[[1]], covariates[[1]])
   ids <- intersect(ids, scores[[1]])
