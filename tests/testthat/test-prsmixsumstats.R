@@ -244,9 +244,19 @@ test_that("combine just one sumstats", {
 })
 
 
+test_that("drop_cols_sumstats", {
+    dat <- sim_test_dat(100, nprs=1000)
+    ss1 <- make_sumstats(dat$x, dat$y)
+    cols <- colnames(ss1$xx)
+    drop_cols <- cols[5:10]
+    chk <- drop_cols_sumstats(ss1, drop_cols)
+    expect_equal(colnames(chk$xx), setdiff(cols, drop_cols))
+})
+
+
 test_that("filter_sumstats", {
-    dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
-    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
+    dat <- sim_test_dat(100, nprs=1000)
+    ss1 <- make_sumstats(dat$x, dat$y)
     overlap <- .example_filter_data(nprs=1000)
     chk <- filter_sumstats(ss1, overlap, filter_col="overlap", name_col="score", filter_threshold=0.5)
     expect_true(ncol(chk$xx) < ncol(ss1$xx))
