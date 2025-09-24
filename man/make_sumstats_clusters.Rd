@@ -9,7 +9,7 @@ make_sumstats_clusters(
   covariates,
   scores,
   clusters,
-  trait_name,
+  analysis_name,
   cohort_name,
   min_cluster_size = 20
 )
@@ -23,7 +23,7 @@ make_sumstats_clusters(
 
 \item{clusters}{data.frame with two columns: sample ID, cluster}
 
-\item{trait_name}{name of trait, used to name output file}
+\item{analysis_name}{name of analysis, used to name output file}
 
 \item{cohort_name}{name of cohort, used to name output file}
 

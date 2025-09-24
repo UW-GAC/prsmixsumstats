@@ -50,7 +50,8 @@ make_sumstats <- function(x, y, center=TRUE){
   if (center) {
     y <- scale(y, scale=FALSE)
   }
-  xy <- t(x) %*% y
+  #xy <- t(x) %*% y
+  xy <- crossprod(x, y)
   #names(xy) <-  xcol.names
 
   yssq <- sum(y^2, na.rm=TRUE)
