@@ -62,21 +62,6 @@ make_sumstats <- function(x, y, center=TRUE){
 }
 
 
-#' create variance matrix
-#' @param xx X'X matrix
-#' @param xy X'Y matrix
-#' @param yssq sum of y^2
-#' @export
-make_varxy <- function(xx, xy, yssq){
-  ## create var mat for later simulations
-  vx <- xx
-  vxy <- xy
-  v12 <- c(yssq, vxy)
-  vmat <- rbind(v12, cbind(vxy, vx))
-  #vmat <- vmat/ nsubj
-  return(vmat)
-}
-
 
 #' Compute elastic net from summary statistics
 #' @description

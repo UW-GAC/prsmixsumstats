@@ -5,8 +5,8 @@ Author: Dan Schaid, Stephanie Gogarten
 Maintainer: Stephanie Gogarten <sdmorris@uw.edu>
 Description: Generate summary statistics for PRSmix elastic net.
 License: MIT + file LICENSE
-Imports: stats
-Suggests: roxygen2, testthat, knitr, rmarkdown
+Imports: stats, rWishart
+Suggests: roxygen2, testthat, knitr, rmarkdown, reshape2, ggplot2
 VignetteBuilder: knitr
 Encoding: UTF-8
 RoxygenNote: 7.3.2
