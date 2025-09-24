@@ -16,11 +16,11 @@
 #' @param covariates data.frame where first column is sample ID and other columns are numeric covariates
 #' @param scores data.frame where first column is sample ID and other columns are scores
 #' @param clusters data.frame with two columns: sample ID, cluster
-#' @param trait_name name of trait, used to name output file
+#' @param analysis_name name of analysis, used to name output file
 #' @param cohort_name name of cohort, used to name output file
 #' @param min_cluster_size minimum size for a cluster to have an output file
 #' @export
-make_sumstats_clusters <- function(trait, covariates, scores, clusters, trait_name, cohort_name,
+make_sumstats_clusters <- function(trait, covariates, scores, clusters, analysis_name, cohort_name,
                                    min_cluster_size = 20) {
     
   # filter any covariates that are all missing
@@ -69,14 +69,14 @@ make_sumstats_clusters <- function(trait, covariates, scores, clusters, trait_na
   rm(covariates)
   
   res <- make_sumstats(x=as.matrix(cov_scores[,-1]), y=unlist(trait[,-1]))
-  saveRDS(res, paste0(trait_name, "_", cohort_name, "_sumstats.rds"))
+  saveRDS(res, paste0(analysis_name, "_", cohort_name, "_sumstats.rds"))
 
   cluster_names <- unique(clusters[[2]])
   for (c in cluster_names) {
     index <- which(clusters[[2]] %in% c)
     if (length(index) > min_cluster_size) {
         res <- make_sumstats(x=as.matrix(cov_scores[index,-1]), y=unlist(trait[index,-1]))
-        saveRDS(res, paste0(trait_name, "_", cohort_name, "_cluster", c, "_sumstats.rds"))
+        saveRDS(res, paste0(analysis_name, "_", cohort_name, "_cluster", c, "_sumstats.rds"))
     }
   }
 }
