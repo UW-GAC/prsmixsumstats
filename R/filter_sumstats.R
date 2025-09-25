@@ -15,7 +15,21 @@
 #' @export
 filter_sumstats <- function(sumstats, filter_tbl, name_col, filter_col, filter_threshold) {
     filtered_ids <- filter_tbl[[name_col]][filter_tbl[[filter_col]] < filter_threshold]
-    keep_cols <- setdiff(colnames(sumstats$xx), filtered_ids)
+    drop_cols_sumstats(sumstats, filtered_ids)
+}
+
+
+#' Drop columns from a sumstats object
+#' 
+#' Drop columns from a sumstats object
+#' 
+#' The intended use of this function is to drop scores from a sumstats object
+#' @param sumstats sumstats object
+#' @param drop_cols column names to drop
+#' @return sumstats object without drop_cols
+#' @export
+drop_cols_sumstats <- function(sumstats, drop_cols) {
+    keep_cols <- setdiff(colnames(sumstats$xx), drop_cols)
     sumstats_filt <- match_cols_sumstats(sumstats, keep_cols)
     validate_sumstats(sumstats_filt)
     return(sumstats_filt)
