@@ -57,16 +57,12 @@ sumstats[[3]] <-  make_sumstats(dat3$x, dat3$y)
 
 ```{r}
 total_stats <- combine_sumstats(sumstats)
-xx <- total_stats$sumstats$xx
-xy <- total_stats$sumstats$xy
-
+sumst <- total_stats$sumstats
 yvar <- total_stats$yvar
-ysum <- attr(total_stats$sumstats, "ysum")
-nobs <- attr(total_stats$sumstats, "nobs")
 
 ## note that there is no intercept because x and y are centered on their means
 
-penalty_factor <- rep(1,ncol(xx))
+penalty_factor <- rep(1,ncol(sumst$xx))
 ## if don't penalize adjusting covariates: should they be penalized??
 ## penalty_factor[1:4] <- 0
 ```
@@ -92,12 +88,12 @@ fit_grid <- matrix(list(), nrow=nalpha, ncol=nlambda)
 # for vignette, reduce number of iterations for time
 maxiter <- 50
 
-beta_init <- rep(0, ncol(xx))
+beta_init <- rep(0, ncol(sumst$xx))
 
 for(i in 1:nalpha){
  
   alpha <- alpha_grid[i]
-  lambda_max <- max(abs(xy))/alpha
+  lambda_max <- max(abs(sumst$xy))/alpha
   lambda_grid <- lambda_max * lambda_frac
  
   cat("================ alpha = ", alpha, ", lambda.frac = ", lambda_frac[1], " ==================\n")
@@ -123,15 +119,17 @@ for(i in 1:nalpha){
 # Metrics of AUC and loss for case/control data for grid
 
 ```{r}
+ysum <- attr(sumst, "ysum")
+nobs <- attr(sumst, "nobs")
 ncase <- ysum
 ncont <- nobs - ncase
 auc <- nbeta <- loss <- matrix(0, nalpha, nlambda)
 for(i in 1:nalpha){
   for(j in 1:nlambda){
   beta <- as.vector(fit_grid[[i,j]]$beta)
-  tmp <- auc_glmnet_sumstats(beta, total_stats$sumstats$xx, yvar, ncase, ncont)
+  tmp <- auc_glmnet_sumstats(beta, sumst$xx, yvar, ncase, ncont)
   auc[i,j] <- tmp$auc
-  loss[i,j] <- yvar - 2*t(beta) %*% total_stats$sumstats$xy +  t(beta) %*% total_stats$sumstats$xx %*% beta
+  loss[i,j] <- yvar - 2*t(beta) %*% sumst$xy +  t(beta) %*% sumst$xx %*% beta
   nbeta[i,j] <- sum( abs(fit_grid[[i,j]]$beta) > 1e-6)
   } 
 }
@@ -154,7 +152,7 @@ set.seed(123)
 # only 5 simulations for vignette
 nsim <- 5
 
-vmat <- make_var_matrix(xx, xy, yvar)
+vmat <- make_var_matrix(sumst$xx, sumst$xy, yvar)
 
 wishart_sim <- sim_sumstats(vmat, nsim=nsim)
 
@@ -189,7 +187,7 @@ auc[index_alpha, index_lambda]
 ## more details about best beta
 
 beta_best <- as.vector(fit_grid[[index_alpha, index_lambda]]$beta)
-hist(beta_best)
+ggplot(data.frame(beta_best), aes(beta_best)) + geom_histogram()
 range(beta_best)
 table(abs(beta_best) > 1e-6)
 ```
