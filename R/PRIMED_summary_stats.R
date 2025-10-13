@@ -62,7 +62,6 @@ make_sumstats <- function(x, y, center=TRUE){
 }
 
 
-
 #' Compute elastic net from summary statistics
 #' @description
 #' Fit an elastic net model based on summary statistics for specified
@@ -92,113 +91,112 @@ make_sumstats <- function(x, y, center=TRUE){
 #' @author Dan Schaid (schaid@mayo.edu)
 #' @export
 glmnet_sumstats <- function(sumstats, beta_init, alpha, lambda, penalty_factor,
-                            maxiter=500, tol=1e-5, f.adj=2, verbose=FALSE){
-  validate_sumstats(sumstats)
+                               maxiter=500, tol=1e-5, max_backtrack=10, verbose=FALSE){
+  ##validate_sumstats(sumstats)
   xx <- sumstats$xx
   xy <- sumstats$xy
-  stopifnot(length(beta_init) == ncol(xx))
-  stopifnot(length(penalty_factor) == ncol(xx))
   
-  eps <- 1e-3 ## used to check whether a beta is penalized by penalty_factor
+  update_beta <- function(index, beta_curr, loss_curr) {
+    ## single coordinate update with line search
+    # compute numerator and denominator
+    numer <- xy[index] - xx[index, ] %*% beta_curr + xx[index,index] * beta_curr[index]
+    denom <- xx[index,index] + lambda_pen[index] * (1 - alpha)
+    
+    
+    # propose update using soft-thresholding
+    beta_candidate <- soft(numer, alpha * lambda_pen[index]) / denom
+    
+    # line search: try step sizes 1, 1/2, 1/4, ...
+    step <- 1.0
+    
+    
+    for (k in 1:max_backtrack) {
+      
+      beta_trial <- (1 - step) * beta_curr[index] + step * beta_candidate
+      loss_trial <- update_loss(loss_old, beta_curr, index, beta_trial, 
+                                xx, xy, alpha, lambda_pen)
+      
+      if (loss_trial <= loss_curr) {   # accept if loss decreases
+        beta_curr[index] <- beta_trial
+        loss_curr <- loss_trial
+        break
+      }
+      
+      step <- step / 2  # backtrack
+    }
+    
+    list(beta = beta_curr, loss = loss_curr)
+  }
+  compute_loss <- function(beta, xx, xy, alpha,lambda_pen){
+    loss <-  sum( t(beta) %*% xx %*% beta - 2*t(beta) %*% xy) + alpha*sum(lambda_pen * abs(beta)) +
+      ((1-alpha)/2)*sum(lambda_pen*beta^2)
+    return(loss)
+  }
+  update_loss <- function(loss_old, beta, j, new_val, xx, xy, alpha, lambda_pen) {
+    old_val <- beta[j]
+    delta   <- new_val - old_val
+    
+    # --- Frobenius part ---
+    xb <- sum(xx[i, ] * beta )
+    dQ   <- 2 * delta * (xb - xy[j]) + delta^2 * xx[j, j]
+    
+    pen_l1_delta <- alpha * lambda_pen[j] * (abs(new_val) - abs(old_val))
+    pen_l2_delta <- ((1 - alpha)/2) * lambda_pen[j] * (new_val^2 - old_val^2)
+     
+    loss_new <- loss_old + (dQ + pen_l1_delta + pen_l2_delta)
+
+    return(loss_new)
+  }
   
-  lambda_pen <- lambda * penalty_factor
   np <- ncol(xx)
+  if(is.null(penalty_factor)) penalty_factor <- rep(1, np)
+  lambda_pen <- lambda * penalty_factor
   if(is.null(beta_init)){
     beta_init <- rep(0, np)
   }
+  
+  stopifnot(length(beta_init) == ncol(xx))
+  stopifnot(length(penalty_factor) == ncol(xx))
+  
   converge <- FALSE
-  betaold <- betanew <- beta_init
-
-  floss_old <-  elastic_net_loss(betaold, xx, xy, alpha,lambda_pen)
-  active <- rep(FALSE, np)
-
-
-  ## determine active set
-  for(j in 1:np){
-    diff <- xy[j] - xx[j,] %*% betaold
-    if(abs(diff) > lambda_pen[j]*alpha)
-    {
-      active[j] <- TRUE
-    }
-  }
+  beta_curr <- beta_init
+  loss_curr <-  compute_loss(beta_curr, xx, xy, alpha,lambda_pen)
+  
 
   ## iterate over active set
   for(iter in 1:maxiter){
-
-    ## random order of beta updates
-    index <- sample(1:np, np)
-    for(i in 1:np){
-      j <- index[i]
+   
+    ## KKT test for zero entries
+    grad <- abs(xy - xx %*% beta_curr)
+    active <- grad > alpha * lambda_pen
+  
+    loss_old <- loss_curr
+    beta_old  <- beta_curr
+    
+    for(j in 1:np){
       if(!active[j]) next
-
-
-      if(abs(lambda_pen[j]) < eps){
-        betanew[j] <- (xy[j] - xx[j,] %*% betaold + xx[j,j]*betaold[j])/xx[j,j]
-      } else{
-        u <- (xy[j] - xx[j,] %*% betaold +  f.adj*xx[j,j]*betaold[j])
-        betanew[j] <- soft(u, alpha*lambda_pen[j])/(f.adj * xx[j,j] + lambda_pen[j]*(1-alpha))
-      }
+      res <- update_beta(j, beta_curr, loss_curr)
+      beta_curr <- res$beta
+      loss_curr <- res$loss
     }
-
-    floss_new <- elastic_net_loss(betanew, xx, xy, alpha,lambda_pen)
-    fdelta <- floss_new - floss_old
-
-    if(verbose){
-      cat("active set: iter = ", iter,", f.adj = ", f.adj, ", f = ", floss_new, "fdelta = ", fdelta , ", beta range = ", range(betanew),"\n")
+    
+    
+    loss_rel_change <- abs(loss_curr - loss_old) / (abs(loss_old) + tol)
+    beta_change <- max(abs(beta_curr - beta_old))
+    
+    if (verbose) {
+      cat("active set: iter =", iter,
+          ", loss_curr =", loss_curr, "loss_rel_change = ", loss_rel_change,
+          ", beta range =", range(beta_curr), "\n")
     }
-
-    if(abs(fdelta) < tol){
+    if (loss_rel_change < tol || beta_change < tol) {
       converge <- TRUE
       break
     }
-
-    floss_old <- floss_new
-    betaold <- betanew
-
   }
-
-  ## now check all beta's, not just active
-  if(converge){
-
-    converge <- FALSE
-
-    for(iter in 1:maxiter){
-
-      ## random order of beta updates
-      index <- sample(1:np, np)
-      for(i in 1:np){
-        j <- index[i]
-
-        if(abs(lambda_pen[j]) < eps){
-          betanew[j] <- (xy[j] - xx[j,] %*% betaold + xx[j,j]*betaold[j])/xx[j,j]
-        } else{
-          u <- (xy[j] - xx[j,] %*% betaold +  f.adj*xx[j,j]*betaold[j])
-          betanew[j] <- soft(u, alpha*lambda_pen[j])/(f.adj * xx[j,j] + lambda_pen[j]*(1-alpha))
-        }
-      }
-
-
-      floss_new <- elastic_net_loss(betanew, xx, xy, alpha,lambda_pen)
-
-      fdelta <- floss_new - floss_old
-
-
-      if(verbose){
-        cat("beta check: iter = ", iter,", f.adj = ", f.adj, ", f = ", floss_new, ", fdelta = ", fdelta , ", beta range = ", range(betanew),"\n")
-      }
-
-      if(abs(fdelta) < tol){
-        converge <- TRUE
-        break
-      }
-
-      floss_old <- floss_new
-      betaold <- betanew
-    }
-
-  }
-
-  return(list(beta=betanew, iter=iter, converge=converge, alpha=alpha, lambda=lambda))
+  
+  
+  return(list(beta=beta_curr, loss=loss_curr, iter=iter, converge=converge, alpha=alpha, lambda=lambda))
 }
 
 soft <- function(x, gamma){
@@ -210,17 +208,6 @@ soft <- function(x, gamma){
     s <- 0
   }
   return(s)
-}
-
-elastic_net_loss <- function(beta, xx, xy, alpha,lambda_pen){
-  f <-  sum( t(beta) %*% xx %*% beta - 2*t(beta) %*% xy) + alpha*sum(lambda_pen * abs(beta)) +
-    (1-alpha)*sum(lambda_pen*beta^2)
-  return(f)
-}
-
-gradient <- function(index, beta, xx, xy, alpha, lambda_pen){
-  d <- 2*(xx %*% beta)[index] -2*xy[index]  +
-    alpha*lambda_pen[index]*sign(beta[index]) + 2*(1-alpha)*lambda_pen[index]*beta[index]
 }
 
 
@@ -266,4 +253,25 @@ sim_test_dat <- function(nsubj, nprs, prev=.1, beta.sd=2, seed=42){
   y <- as.vector(1*(runif(nsubj) <= p))
   colnames(x) <- c("age","sex","cov1","cov2", paste0("PRS00", 1:nprs))
   return(list(y=y, x=x))
+}
+
+
+
+metrics_sumstats <- function(sumstats, fit_grid){
+  ncase <- attr(sumstats, "ysum")
+  ncont <-  attr(sumstats, "nobs") - ncase
+  nalpha <- nrow(fit_grid)
+  nlambda <- ncol(fit_grid)
+  vary <- sumstats$vary
+  auc <- nbeta <- loss <- matrix(0, nalpha, nlambda)
+  for(i in 1:nalpha){
+    for(j in 1:nlambda){
+      beta <- as.vector(fit_grid[[i,j]]$beta)
+      tmp <- auc_glmnet_sumstats(beta, sumstats$xx, vary, ncase, ncont)
+      auc[i,j] <- tmp$auc
+      loss[i,j] <- vary - 2*t(beta) %*% sumstats$xy +  t(beta) %*% sumstats$xx %*% beta
+      nbeta[i,j] <- sum( abs(beta) > 1e-6)
+    }
+  }
+  return(list(auc=auc, loss=loss, nbeta=nbeta))
 }
