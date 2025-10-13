@@ -79,7 +79,11 @@ eval_sim <- function(wishart_sim, fit_grid, vary){
 }
 
 
- 
+#' loss indices
+#' @param loss_mean mean loss
+#' @param loss_sd sd of less
+#' @return indices
+#' @export
 loss_indices <- function(loss_mean, loss_sd){
     min_loss <- min(loss_mean)
     loss_min_index <- which(loss_mean ==  min_loss, arr.ind = TRUE)

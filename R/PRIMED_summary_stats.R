@@ -77,12 +77,7 @@ make_sumstats <- function(x, y, center=TRUE){
 #' @param maxiter is maximum number of cyclic coordinate descent iterations.
 #' One iteration is over all p parameters.
 #' @param tol is tolerance to check convergence
-#' @param f.adj (f.adj >=1) is an adjustment factor to guard against diverging betas, which can
-#' occur when n is small relative to p. The default value of 2 should work most of the time.
-#' If beta parameters are found to diverge, larger values can be used.
-#' Note that larger values of f.adj cause more iterations.
-#' See Yang, Y., & Zou, H. (2012). A coordinate majorization descent algorithm for L1 penalized learning.
-#' Journal of Statistical Computation and Simulation, 84(1), 84–95. https://doi.org/10.1080/00949655.2012.695374
+#' @param max_backtrack maximum to backtrack
 #' @param verbose prints summary results at each iteration if verbose=TRUE
 #' @details
 #' Cyclic coordinate descent is used to fit an elastic net model based on minimizing penalized least squared.
@@ -257,6 +252,11 @@ sim_test_dat <- function(nsubj, nprs, prev=.1, beta.sd=2, seed=42){
 
 
 
+#' calculate metrics for summary stats
+#' @param sumstats list with items xx, xy
+#' @param fit_grid output of glmnet_sumstats
+#' @return list of auc, loss, nbeta
+#' @export
 metrics_sumstats <- function(sumstats, fit_grid){
   ncase <- attr(sumstats, "ysum")
   ncont <-  attr(sumstats, "nobs") - ncase

@@ -4,14 +4,10 @@
 \alias{make_var_matrix}
 \title{create variance matrix}
 \usage{
-make_var_matrix(xx, xy, yvar)
+make_var_matrix(sumstats)
 }
 \arguments{
-\item{xx}{X'X matrix}
-
-\item{xy}{X'Y matrix}
-
-\item{yvar}{variance of y}
+\item{sumstats}{list with items xx, xy, and vary}
 }
 \description{
 create variance matrix

@@ -12,7 +12,7 @@ glmnet_sumstats(
   penalty_factor,
   maxiter = 500,
   tol = 1e-05,
-  f.adj = 2,
+  max_backtrack = 10,
   verbose = FALSE
 )
 }
@@ -34,12 +34,7 @@ One iteration is over all p parameters.}
 
 \item{tol}{is tolerance to check convergence}
 
-\item{f.adj}{(f.adj >=1) is an adjustment factor to guard against diverging betas, which can
-occur when n is small relative to p. The default value of 2 should work most of the time.
-If beta parameters are found to diverge, larger values can be used.
-Note that larger values of f.adj cause more iterations.
-See Yang, Y., & Zou, H. (2012). A coordinate majorization descent algorithm for L1 penalized learning.
-Journal of Statistical Computation and Simulation, 84(1), 84–95. https://doi.org/10.1080/00949655.2012.695374}
+\item{max_backtrack}{maximum to backtrack}
 
 \item{verbose}{prints summary results at each iteration if verbose=TRUE}
 }

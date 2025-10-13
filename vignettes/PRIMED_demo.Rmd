@@ -14,180 +14,158 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE)
 ```
 
 
-Create test data of 3 groups with PRS (nprs) and covariates (sex, age, cov1, cov2)
-
-
 ```{r}
 library(prsmixsumstats)
 ```
 
+Simulate test data of 3 groups with PRS (nprs) and covariates (sex, age, covs)
+
 ```{r}
-## simulate training data
 nprs <- 500
+n1 <- 100
+n2 <- 200
+n3 <- 100
 
-n1 <- 1000
-n2 <- 500
-n3 <- 50
-
-dat1 <- sim_test_dat(n1, nprs, prev=.1, beta.sd=2)
-dat2 <- sim_test_dat(n2, nprs, prev=.1, beta.sd=2)
-dat3 <- sim_test_dat(n3, nprs, prev=.1, beta.sd=2)
-
-## make some y's missing
-dat1$y[3:20] <- NA
-dat2$y[15:30] <- NA
-dat3$y[1:16] <- NA
-
-## make some x's missing
-dat1$x[3:5, 4:5] <- NA
-dat2$x[20:30, 5:8] <- NA
-dat3$x[2:10, 6:9] <- NA
+dat1 <- sim_test_dat(n1, nprs)
+dat2 <- sim_test_dat(n2, nprs)
+dat3 <- sim_test_dat(n3, nprs)
 ```
 
 # Biobanks Create Summary Statistics (3 demo biobanks)
 
 ```{r}
-sumstats <- list()
-sumstats[[1]] <-  make_sumstats(dat1$x, dat1$y)
-sumstats[[2]] <-  make_sumstats(dat2$x, dat2$y)
-sumstats[[3]] <-  make_sumstats(dat3$x, dat3$y)
+sumstat1 <- make_sumstats(dat1$x, dat1$y)
+sumstat2 <- make_sumstats(dat2$x, dat2$y)
+sumstat3 <- make_sumstats(dat3$x, dat3$y)
+sumstats_all <- list(sumstat1, sumstat2, sumstat3)
 ```
 
 # CC: sum over biobanks
 
 ```{r}
-total_stats <- combine_sumstats(sumstats)
-sumst <- total_stats$sumstats
-yvar <- total_stats$yvar
+combo_sumstats <- combine_sumstats(sumstats_all)
 
-## note that there is no intercept because x and y are centered on their means
-
-penalty_factor <- rep(1,ncol(sumst$xx))
-## if don't penalize adjusting covariates: should they be penalized??
-## penalty_factor[1:4] <- 0
+sumstats <- combo_sumstats$sumstats
+sumstats$vary <- combo_sumstats$yvar
 ```
 
 # Fit glmnet_sumstats for a grid of alpha's & lambda's
 
 ```{r}
+penalty_factor <- rep(1,ncol(sumstats$xx))
+
+
 ## alpha weights abs(beta) and (1-alpha) weights beta^2
-#alpha_grid <- (9:1)/10
-#lambda_frac <- seq(from=1, to=.05, by= -.05)
-# for vignette, reduce number of lambda and alpha for time
-alpha_grid <- seq(from=0.9, to=0.1, -0.2)
-lambda_frac <- seq(from=1, to=.05, by= -.1)
+alpha_grid <- seq(from=0.9, to=0.1, by= -0.2)
+lambda_frac <- exp(seq(from=log(1), to=log(.05), length=10))
+
 
 nlambda <- length(lambda_frac)
 nalpha <- length(alpha_grid)
 
 ## note 2-dimensional grid of fits. Each fit is a list
 ## and all fits arranged as matrix (of lists)
+
 fit_grid <- matrix(list(), nrow=nalpha, ncol=nlambda)
 
-#maxiter <- 500
-# for vignette, reduce number of iterations for time
 maxiter <- 50
 
-beta_init <- rep(0, ncol(sumst$xx))
+beta_zero <- rep(0, ncol(sumstats$xx))
+max_xy <- max(abs(sumstats$xy))
 
+time_begin <-  proc.time()
 for(i in 1:nalpha){
- 
   alpha <- alpha_grid[i]
-  lambda_max <- max(abs(sumst$xy))/alpha
-  lambda_grid <- lambda_max * lambda_frac
- 
-  cat("================ alpha = ", alpha, ", lambda.frac = ", lambda_frac[1], " ==================\n")
-
-  fit_grid[[i,1]] <- glmnet_sumstats(total_stats$sumstats, beta_init, alpha=alpha, lambda=lambda_grid[1], 
-                                penalty_factor, maxiter=maxiter, tol=1e-7,f.adj=2.0, verbose=FALSE)
-  for(j in 2:nlambda){
+  lambda_max <- max_xy/alpha
+  
+  for(j in 1:nlambda){
+    lambda <- lambda_frac[j]*lambda_max
+    cat("================ alpha = ", alpha, ", lambda.frac = ", lambda_frac[j], ", lambda = ", lambda, " ==================\n")
+    
+    if(i==1 & j==1){
+      beta_init <- beta_zero
+    } else if (i > 1 & j == 1){
+      beta_init <- fit_grid[[i-1,j]]$beta   ## use warm start for next fit
+    } else {
+      beta_init <- fit_grid[[i,j-1]]$beta   ## use warm start for next fit
+    }
+    
     ptm <- proc.time()
-    cat("================ alpha = ", alpha, ", lambda.frac = ", lambda_frac[j], " ==================\n")
-
-  ## use warm start for next fit
-  beta_init <- fit_grid[[i,j-1]]$beta
-  fit_grid[[i, j]] <-  glmnet_sumstats(total_stats$sumstats, beta_init, alpha=alpha, lambda=lambda_grid[j], 
-                                    penalty_factor, maxiter=maxiter, tol=1e-7,f.adj=32.0, verbose=FALSE)
-  ## print(proc.time() - ptm)
+    fit_grid[[i,j]] <-  glmnet_sumstats(sumstats, beta_init, alpha=alpha, lambda=lambda, penalty_factor,  maxiter=500, tol=1e-5, verbose=FALSE)
+    print(proc.time() - ptm)
   }
 }
-
-
 ```
 
 
-# Metrics of AUC and loss for case/control data for grid
+## metrics for training data
 
 ```{r}
-ysum <- attr(sumst, "ysum")
-nobs <- attr(sumst, "nobs")
-ncase <- ysum
-ncont <- nobs - ncase
-auc <- nbeta <- loss <- matrix(0, nalpha, nlambda)
-for(i in 1:nalpha){
-  for(j in 1:nlambda){
-  beta <- as.vector(fit_grid[[i,j]]$beta)
-  tmp <- auc_glmnet_sumstats(beta, sumst$xx, yvar, ncase, ncont)
-  auc[i,j] <- tmp$auc
-  loss[i,j] <- yvar - 2*t(beta) %*% sumst$xy +  t(beta) %*% sumst$xx %*% beta
-  nbeta[i,j] <- sum( abs(fit_grid[[i,j]]$beta) > 1e-6)
-  } 
-}
 
-loss
-auc
-nbeta
+metrics_train <- metrics_sumstats(sumstats, fit_grid)
+
 ```
 
-
-
-# choose lambda penalty
-
-now choose best lambda based on simulated data, using
-the covariance matrix of Y with X to simulate validation data
+## Simulate data to choose penalty alpha and lambda
 
 ```{r}
 set.seed(123)
 
-# only 5 simulations for vignette
 nsim <- 5
 
-vmat <- make_var_matrix(sumst$xx, sumst$xy, yvar)
-
+vmat <- make_var_matrix(sumstats)
+time_begin <-  proc.time()
 wishart_sim <- sim_sumstats(vmat, nsim=nsim)
+print(proc.time() - time_begin)
+```
 
-eval_sim <- metrics_sim(wishart_sim, fit_grid, yvar)
+## plot loss across grid
 
-loss_mean <- eval_sim$loss_mean
-loss_sd <- eval_sim$loss_sd
-index_alpha <- eval_sim$index_best[1]
-index_lambda <- eval_sim$index_best[2]
-index_long <- eval_sim$index_best[3]
+```{r}
+loss_sim <- eval_sim(wishart_sim, fit_grid, sumstats$vary)
+
+loss_mean <- loss_sim$loss_mean
+loss_sd   <- loss_sim$loss_sd
+
+grid_indices <- loss_indices(loss_mean, loss_sd)
 
 # Convert to long format for plotting
 library(reshape2)
+
 colnames(loss_mean) <- lambda_frac
 rownames(loss_mean) <- alpha_grid
 mat_long <- melt(loss_mean)
-names(mat_long) <- c("alpha", "lambda", "value")
-mat_long$loss <- rep("above", nrow(mat_long))
-mat_long$loss[index_long] <- "min-1sd"  
+names(mat_long) <- c("alpha", "lambda", "loss")
 
+mat_long$label <- rep("above", nrow(mat_long))
+
+index_mat_to_vec <- function(i,j,nrow){
+  k <-  i+(j - 1)*nrow
+  return(k)
+}
+kmin <- index_mat_to_vec(grid_indices$loss_min_index[1], grid_indices$loss_min_index[2], nrow(loss_mean))
+mat_long$label[kmin] <- "min"
+
+k1sd <- index_mat_to_vec(grid_indices$loss_1sd_index[1], grid_indices$loss_1sd_index[2], nrow(loss_mean))
+mat_long$label[k1sd] <- "min+1sd"
+
+titl <- paste0("Loss across grid")
 
 library(ggplot2)
 
-ggplot(mat_long, aes(x = lambda, y = alpha, color = loss)) + 
-  geom_point(aes(size = value)) +
-  scale_color_manual(values = c("min-1sd" = "red", "above" = "black")) +
-  labs(title = "mean loss across grid", x = "lambda", y = "alpha")
-
-## AUC of best model for training data
-auc[index_alpha, index_lambda]
-
-## more details about best beta
-
-beta_best <- as.vector(fit_grid[[index_alpha, index_lambda]]$beta)
-ggplot(data.frame(beta_best), aes(beta_best)) + geom_histogram()
-range(beta_best)
-table(abs(beta_best) > 1e-6)
+ggplot(mat_long, aes(x = lambda, y = alpha, color = label)) + 
+  geom_point(aes(size = loss)) +
+  scale_color_manual(values = c("min" = "red", "min+1sd" = "blue", "above" = "black")) +
+  labs(title = titl, x = "lambda_frac", y = "alpha")
 ```
+
+## No. Beta's Selected
+
+```{r}
+countmin <- table(abs(fit_grid[[grid_indices$loss_min_index[1], grid_indices$loss_min_index[2]]]$beta) > 1e-6)
+count1sd <- table(abs(fit_grid[[grid_indices$loss_1sd_index[1], grid_indices$loss_1sd_index[2]]]$beta) > 1e-6)
+
+rbind(countmin, count1sd)
+```
+
+
