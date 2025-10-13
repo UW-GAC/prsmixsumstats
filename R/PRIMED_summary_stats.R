@@ -85,7 +85,7 @@ make_sumstats <- function(x, y, center=TRUE){
 #' alpha and lambda
 #' @author Dan Schaid (schaid@mayo.edu)
 #' @export
-glmnet_sumstats <- function(sumstats, beta_init, alpha, lambda, penalty_factor,
+glmnet_sumstats <- function(sumstats, beta_init = NULL, alpha, lambda, penalty_factor = NULL,
                                maxiter=500, tol=1e-5, max_backtrack=10, verbose=FALSE){
   ##validate_sumstats(sumstats)
   xx <- sumstats$xx
