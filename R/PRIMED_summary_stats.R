@@ -190,7 +190,7 @@ glmnet_sumstats <- function(sumstats, beta_init = NULL, alpha, lambda, penalty_f
     }
   }
   
-  
+  names(beta_curr) <- colnames(xx)
   return(list(beta=beta_curr, loss=loss_curr, iter=iter, converge=converge, alpha=alpha, lambda=lambda))
 }
 

@@ -4,4 +4,5 @@ test_that("glmnet_sumstats", {
     fit_sumstats <-  glmnet_sumstats(ss, alpha=0.5, lambda=0.5, 
                                      maxiter=10, tol=1e-7, verbose=FALSE)
     expect_equal(length(fit_sumstats$beta), 1004)
+    expect_equal(names(fit_sumstats$beta), colnames(ss$xx))
 })
