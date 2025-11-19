@@ -1,11 +1,11 @@
 #' Make summary statistics
-#' 
+#'
 #' From input design matrix x and outcome vector y, compute x'x and x'y
 #'
 #' important: x and y must have the same number of subjects
-#' and ordered the same way according to subject ID, but ID 
+#' and ordered the same way according to subject ID, but ID
 #' should not be a column of X
-#' 
+#'
 #' returns a sumstats object, which contains two list elements:
 #' 1. matrix of x'x where x is nxp design matrix
 #' 2. vector of x'y where y is nx1 trait vector
@@ -14,7 +14,7 @@
 #' @param x design matrix with rows as individual observations
 #' @param y vector with outcomes, length should match nrow(x)
 #' @param center boolean for whether to center and scale x and y
-#' @return sumstats object with elements xx and xy 
+#' @return sumstats object with elements xx and xy
 #' @export
 make_sumstats <- function(x, y, center=TRUE){
   ## important: x and y must have the same number of subjects
@@ -55,11 +55,13 @@ make_sumstats <- function(x, y, center=TRUE){
   #names(xy) <-  xcol.names
 
   yssq <- sum(y^2, na.rm=TRUE)
-  
+
   ss <- new_sumstats(xx, xy, nsubj, nmiss, nobs, csum, ysum, yssq, centered=center)
 
   return(ss)
 }
+
+
 
 
 #' Compute elastic net from summary statistics
@@ -85,41 +87,43 @@ make_sumstats <- function(x, y, center=TRUE){
 #' alpha and lambda
 #' @author Dan Schaid (schaid@mayo.edu)
 #' @export
+#'
+#'
 glmnet_sumstats <- function(sumstats, beta_init = NULL, alpha, lambda, penalty_factor = NULL,
                                maxiter=500, tol=1e-5, max_backtrack=10, verbose=FALSE){
-  ##validate_sumstats(sumstats)
+  ## temp skip validate_sumstats(sumstats)
   xx <- sumstats$xx
   xy <- sumstats$xy
-  
+
   update_beta <- function(index, beta_curr, loss_curr) {
     ## single coordinate update with line search
     # compute numerator and denominator
     numer <- xy[index] - xx[index, ] %*% beta_curr + xx[index,index] * beta_curr[index]
     denom <- xx[index,index] + lambda_pen[index] * (1 - alpha)
-    
-    
+
+
     # propose update using soft-thresholding
     beta_candidate <- soft(numer, alpha * lambda_pen[index]) / denom
-    
+
     # line search: try step sizes 1, 1/2, 1/4, ...
     step <- 1.0
-    
-    
+
+
     for (k in 1:max_backtrack) {
-      
+
       beta_trial <- (1 - step) * beta_curr[index] + step * beta_candidate
-      loss_trial <- update_loss(loss_old, beta_curr, index, beta_trial, 
+      loss_trial <- update_loss(loss_old, beta_curr, index, beta_trial,
                                 xx, xy, alpha, lambda_pen)
-      
+
       if (loss_trial <= loss_curr) {   # accept if loss decreases
         beta_curr[index] <- beta_trial
         loss_curr <- loss_trial
         break
       }
-      
+
       step <- step / 2  # backtrack
     }
-    
+
     list(beta = beta_curr, loss = loss_curr)
   }
   compute_loss <- function(beta, xx, xy, alpha,lambda_pen){
@@ -130,55 +134,57 @@ glmnet_sumstats <- function(sumstats, beta_init = NULL, alpha, lambda, penalty_f
   update_loss <- function(loss_old, beta, j, new_val, xx, xy, alpha, lambda_pen) {
     old_val <- beta[j]
     delta   <- new_val - old_val
-    
+
     # --- Frobenius part ---
-    xb <- sum(xx[i, ] * beta )
+    ## fixed by changing index i to j
+    xb <- sum(xx[j, ] * beta )
     dQ   <- 2 * delta * (xb - xy[j]) + delta^2 * xx[j, j]
-    
+
     pen_l1_delta <- alpha * lambda_pen[j] * (abs(new_val) - abs(old_val))
     pen_l2_delta <- ((1 - alpha)/2) * lambda_pen[j] * (new_val^2 - old_val^2)
-     
+
     loss_new <- loss_old + (dQ + pen_l1_delta + pen_l2_delta)
 
     return(loss_new)
   }
-  
+
   np <- ncol(xx)
   if(is.null(penalty_factor)) penalty_factor <- rep(1, np)
   lambda_pen <- lambda * penalty_factor
   if(is.null(beta_init)){
     beta_init <- rep(0, np)
   }
-  
+
   stopifnot(length(beta_init) == ncol(xx))
   stopifnot(length(penalty_factor) == ncol(xx))
-  
+
   converge <- FALSE
   beta_curr <- beta_init
   loss_curr <-  compute_loss(beta_curr, xx, xy, alpha,lambda_pen)
-  
+
 
   ## iterate over active set
   for(iter in 1:maxiter){
-   
+
     ## KKT test for zero entries
+
     grad <- abs(xy - xx %*% beta_curr)
     active <- grad > alpha * lambda_pen
-  
+
     loss_old <- loss_curr
     beta_old  <- beta_curr
-    
+
     for(j in 1:np){
       if(!active[j]) next
       res <- update_beta(j, beta_curr, loss_curr)
       beta_curr <- res$beta
       loss_curr <- res$loss
     }
-    
-    
+
+
     loss_rel_change <- abs(loss_curr - loss_old) / (abs(loss_old) + tol)
     beta_change <- max(abs(beta_curr - beta_old))
-    
+
     if (verbose) {
       cat("active set: iter =", iter,
           ", loss_curr =", loss_curr, "loss_rel_change = ", loss_rel_change,
@@ -189,10 +195,12 @@ glmnet_sumstats <- function(sumstats, beta_init = NULL, alpha, lambda, penalty_f
       break
     }
   }
-  
+
+
   names(beta_curr) <- colnames(xx)
   return(list(beta=beta_curr, loss=loss_curr, iter=iter, converge=converge, alpha=alpha, lambda=lambda))
 }
+
 
 soft <- function(x, gamma){
   if(x > gamma){
@@ -204,6 +212,7 @@ soft <- function(x, gamma){
   }
   return(s)
 }
+
 
 
 #' calculate AUC from glmnet_sumstats results
@@ -251,6 +260,56 @@ sim_test_dat <- function(nsubj, nprs, prev=.1, beta.sd=2, seed=42){
 }
 
 
+#' Fit glmnet over grid of alpha and lambda values from summary statistics
+#' @param sumstats list with items xx, xy
+#' @param alpha_grid vector of alpha values (0-1)
+#' @param lambda_frac vector of lambda fractions (0-1)
+#' @param penalty_factor vector of penalty factors
+#' @param maxiter maximum number of iterations for glmnet_sumstats
+#' @param tol tolerance for glmnet_sumstats
+#' @param verbose print progress if TRUE
+#' @return matrix (nalpha x nlambda) of glmnet_sumstats results (lists)
+#' @export
+glmnet_sumstats_grid <- function(sumstats, alpha_grid, lambda_frac, penalty_factor, maxiter=500, tol=1e-6, verbose=FALSE){
+
+  nalpha <- length(alpha_grid)
+  nlambda <- length(lambda_frac)
+  fit_grid <- matrix(list(), nrow=nalpha, ncol=nlambda)
+
+  beta_zero <- rep(0, ncol(sumstats$xx))
+  max_xy <- max(abs(sumstats$xy))
+
+  time_begin <-  proc.time()
+  for(i in 1:nalpha){
+    alpha <- alpha_grid[i]
+    lambda_max <- max_xy/alpha
+
+    for(j in 1:nlambda){
+
+      lambda <- lambda_frac[j]*lambda_max
+
+      if(verbose)  cat("================ alpha = ", alpha, ", lambda j = ",j, ", lambda = ", lambda, " ==================\n")
+
+      if(i==1 & j==1){
+        beta_init <- beta_zero
+      } else if (i > 1 & j == 1){
+        beta_init <- fit_grid[[i-1,j]]$beta   ## use warm start for next fit
+      } else {
+        beta_init <- fit_grid[[i,j-1]]$beta   ## use warm start for next fit
+      }
+
+      ptm <- proc.time()
+
+
+      fit_grid[[i,j]] <-  glmnet_sumstats(sumstats, beta_init, alpha=alpha, lambda=lambda, penalty_factor,  maxiter=maxiter, tol=tol, verbose=FALSE)
+      if(verbose) print(proc.time() - ptm)
+    }
+  }
+
+  if(verbose) print(proc.time() - time_begin)
+  return(fit_grid)
+}
+
 
 #' calculate metrics for summary stats
 #' @param sumstats list with items xx, xy
@@ -259,19 +318,40 @@ sim_test_dat <- function(nsubj, nprs, prev=.1, beta.sd=2, seed=42){
 #' @export
 metrics_sumstats <- function(sumstats, fit_grid){
   ncase <- attr(sumstats, "ysum")
-  ncont <-  attr(sumstats, "nobs") - ncase
+  nobs <- attr(sumstats, "nobs")
+  ncont <- nobs - ncase
+
   nalpha <- nrow(fit_grid)
   nlambda <- ncol(fit_grid)
-  vary <- sumstats$vary
-  auc <- nbeta <- loss <- matrix(0, nalpha, nlambda)
+  yvar <- 1
+  auc <- bic <- nbeta <- loss <- matrix(0, nalpha, nlambda)
   for(i in 1:nalpha){
     for(j in 1:nlambda){
       beta <- as.vector(fit_grid[[i,j]]$beta)
-      tmp <- auc_glmnet_sumstats(beta, sumstats$xx, vary, ncase, ncont)
+      tmp <- auc_glmnet_sumstats(beta, sumstats$xx, yvar, ncase, ncont)
       auc[i,j] <- tmp$auc
-      loss[i,j] <- vary - 2*t(beta) %*% sumstats$xy +  t(beta) %*% sumstats$xx %*% beta
-      nbeta[i,j] <- sum( abs(beta) > 1e-6)
+      loss[i,j] <- yvar - 2*t(beta) %*% sumstats$xy +  t(beta) %*% sumstats$xx %*% beta
+      nbeta[i,j] <- sum( abs(fit_grid[[i,j]]$beta) > 1e-6)
+      bic[i,j] <- nobs * log(loss[i,j]) + nbeta[i,j]*log(nobs)
     }
   }
-  return(list(auc=auc, loss=loss, nbeta=nbeta))
+  min_bic <- min(bic)
+  bic_min_index <- which(bic == min_bic, arr.ind = TRUE)
+
+  min_loss <- min(loss)
+  loss_min_index <- which(loss == min_loss, arr.ind = TRUE)
+  return(list(auc=auc, bic=bic, loss=loss, nbeta=nbeta, bic_min_index = bic_min_index, loss_min_index = loss_min_index))
+
+}
+
+
+#' convert matrix indices to vector index
+#' @param row_i row index
+#' @param col_j column index
+#' @param nrow number of rows in matrix
+#' @return vector index
+#' @export
+index_mat_to_vec <- function(row_i,col_j, nrow){
+  k <- (col_j -1)* nrow + row_i
+  return(k)
 }
