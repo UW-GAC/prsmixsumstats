@@ -52,17 +52,14 @@ sumstats$vary <- combo_sumstats$yvar
 # Fit glmnet_sumstats for a grid of alpha's & lambda's
 
 ```{r}
-penalty_factor <- rep(1,ncol(sumstats$xx))
-
+## setup grid of penalty parameters (alpha and lambda)
 ## alpha weights abs(beta) and (1-alpha) weights beta^2
 alpha_grid <- seq(from=0.9, to=0.1, by= -0.2)
-lambda_frac <- exp(seq(from=log(1), to=log(.05), length=10))
-
-nlambda <- length(lambda_frac)
-nalpha <- length(alpha_grid)
+lambda_frac <- seq(from=1, to=.01, length=10)
 
 ## note 2-dimensional grid of fits. Each fit is a list
 ## and all fits arranged as matrix (of lists)
+penalty_factor <- rep(1,ncol(sumstats$xx))
 
 fit_obs <- glmnet_sumstats_grid(sumstats, alpha_grid, lambda_frac, penalty_factor, maxiter=500, tol=1e-5, verbose=FALSE)
 ```
