@@ -21,7 +21,7 @@ From input design matrix x and outcome vector y, compute x'x and x'y
 }
 \details{
 important: x and y must have the same number of subjects
-and ordered the same way according to subject ID, but ID 
+and ordered the same way according to subject ID, but ID
 should not be a column of X
 
 returns a sumstats object, which contains two list elements:

@@ -54,11 +54,9 @@ sumstats$vary <- combo_sumstats$yvar
 ```{r}
 penalty_factor <- rep(1,ncol(sumstats$xx))
 
-
 ## alpha weights abs(beta) and (1-alpha) weights beta^2
 alpha_grid <- seq(from=0.9, to=0.1, by= -0.2)
 lambda_frac <- exp(seq(from=log(1), to=log(.05), length=10))
-
 
 nlambda <- length(lambda_frac)
 nalpha <- length(alpha_grid)
@@ -66,106 +64,74 @@ nalpha <- length(alpha_grid)
 ## note 2-dimensional grid of fits. Each fit is a list
 ## and all fits arranged as matrix (of lists)
 
-fit_grid <- matrix(list(), nrow=nalpha, ncol=nlambda)
-
-maxiter <- 50
-
-beta_zero <- rep(0, ncol(sumstats$xx))
-max_xy <- max(abs(sumstats$xy))
-
-time_begin <-  proc.time()
-for(i in 1:nalpha){
-  alpha <- alpha_grid[i]
-  lambda_max <- max_xy/alpha
-  
-  for(j in 1:nlambda){
-    lambda <- lambda_frac[j]*lambda_max
-    cat("================ alpha = ", alpha, ", lambda.frac = ", lambda_frac[j], ", lambda = ", lambda, " ==================\n")
-    
-    if(i==1 & j==1){
-      beta_init <- beta_zero
-    } else if (i > 1 & j == 1){
-      beta_init <- fit_grid[[i-1,j]]$beta   ## use warm start for next fit
-    } else {
-      beta_init <- fit_grid[[i,j-1]]$beta   ## use warm start for next fit
-    }
-    
-    ptm <- proc.time()
-    fit_grid[[i,j]] <-  glmnet_sumstats(sumstats, beta_init, alpha=alpha, lambda=lambda, penalty_factor,  maxiter=500, tol=1e-5, verbose=FALSE)
-    print(proc.time() - ptm)
-  }
-}
+fit_obs <- glmnet_sumstats_grid(sumstats, alpha_grid, lambda_frac, penalty_factor, maxiter=500, tol=1e-5, verbose=FALSE)
 ```
 
 
-## metrics for training data
+## metrics 
 
 ```{r}
+metrics_obs <- metrics_sumstats(sumstats, fit_obs)
+metrics_obs$bic_min_index
+metrics_obs$loss_min_index
 
-metrics_train <- metrics_sumstats(sumstats, fit_grid)
+metrics_obs$auc[metrics_obs$bic_min_index]
+metrics_obs$auc[metrics_obs$loss_min_index]
 
+metrics_obs$nbeta[metrics_obs$bic_min_index]
+metrics_obs$nbeta[metrics_obs$loss_min_index]
 ```
 
-## Simulate data to choose penalty alpha and lambda
 
-```{r}
-set.seed(123)
-
-nsim <- 5
-
-vmat <- make_var_matrix(sumstats)
-time_begin <-  proc.time()
-wishart_sim <- sim_sumstats(vmat, nsim=nsim)
-print(proc.time() - time_begin)
-```
 
 ## plot loss across grid
 
 ```{r}
-loss_sim <- eval_sim(wishart_sim, fit_grid, sumstats$vary)
-
-loss_mean <- loss_sim$loss_mean
-loss_sd   <- loss_sim$loss_sd
-
-grid_indices <- loss_indices(loss_mean, loss_sd)
-
-# Convert to long format for plotting
+library(ggplot2)
 library(reshape2)
+colnames(metrics_obs$loss) <- lambda_frac
+rownames(metrics_obs$loss) <- alpha_grid
+mat_long <- melt(metrics_obs$loss)
 
-colnames(loss_mean) <- lambda_frac
-rownames(loss_mean) <- alpha_grid
-mat_long <- melt(loss_mean)
 names(mat_long) <- c("alpha", "lambda", "loss")
-
 mat_long$label <- rep("above", nrow(mat_long))
 
-index_mat_to_vec <- function(i,j,nrow){
-  k <-  i+(j - 1)*nrow
-  return(k)
-}
-kmin <- index_mat_to_vec(grid_indices$loss_min_index[1], grid_indices$loss_min_index[2], nrow(loss_mean))
-mat_long$label[kmin] <- "min"
+k <- index_mat_to_vec(metrics_obs$loss_min_index[1],metrics_obs$loss_min_index[2], nrow(metrics_obs$loss))
+mat_long$label[k] <- "min-loss"
 
-k1sd <- index_mat_to_vec(grid_indices$loss_1sd_index[1], grid_indices$loss_1sd_index[2], nrow(loss_mean))
-mat_long$label[k1sd] <- "min+1sd"
+k <- index_mat_to_vec(metrics_obs$bic_min_index[1],metrics_obs$bic_min_index[2] , nrow(metrics_obs$loss))
+mat_long$label[k] <- "min-bic"
 
-titl <- paste0("Loss across grid")
-
-library(ggplot2)
+titl <- paste0("Loss Across Grid")
 
 ggplot(mat_long, aes(x = lambda, y = alpha, color = label)) + 
   geom_point(aes(size = loss)) +
-  scale_color_manual(values = c("min" = "red", "min+1sd" = "blue", "above" = "black")) +
+  scale_color_manual(values = c("min-loss" = "red", "min-bic" = "blue", "above" = "black")) +
   labs(title = titl, x = "lambda_frac", y = "alpha")
 ```
 
-## No. Beta's Selected
+
+## look at model based on min bic
 
 ```{r}
-countmin <- table(abs(fit_grid[[grid_indices$loss_min_index[1], grid_indices$loss_min_index[2]]]$beta) > 1e-6)
-count1sd <- table(abs(fit_grid[[grid_indices$loss_1sd_index[1], grid_indices$loss_1sd_index[2]]]$beta) > 1e-6)
+metrics_obs$auc[metrics_obs$bic_min_index]
+beta_bic <- fit_obs[[metrics_obs$bic_min_index[1], metrics_obs$bic_min_index[2]]]$beta
 
-rbind(countmin, count1sd)
+table(abs(beta_bic) > 1e-6)
+
+pgs_selected <- names(beta_bic)[abs(beta_bic) > 1e-6]
+pgs_selected
 ```
 
 
+## look at model based on min loss
+```{r, metrics_min_loss}
+metrics_obs$auc[metrics_obs$loss_min_index]
+beta_min_loss <- fit_obs[[metrics_obs$loss_min_index[1], metrics_obs$loss_min_index[2]]]$beta
+table(abs(beta_min_loss) > 1e-6)
+
+pgs_selected <- names(beta_min_loss)[abs(beta_min_loss) > 1e-6]
+head(pgs_selected)
+
+plot(beta_bic, beta_min_loss); abline(0,1)
+```

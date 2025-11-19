@@ -6,10 +6,10 @@
 \usage{
 glmnet_sumstats(
   sumstats,
-  beta_init,
+  beta_init = NULL,
   alpha,
   lambda,
-  penalty_factor,
+  penalty_factor = NULL,
   maxiter = 500,
   tol = 1e-05,
   max_backtrack = 10,
