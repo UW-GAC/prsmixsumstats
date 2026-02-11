@@ -46,7 +46,6 @@ sumstats_all <- list(sumstat1, sumstat2, sumstat3)
 combo_sumstats <- combine_sumstats(sumstats_all)
 
 sumstats <- combo_sumstats$sumstats
-sumstats$vary <- combo_sumstats$yvar
 ```
 
 # Fit glmnet_sumstats for a grid of alpha's & lambda's
@@ -86,9 +85,9 @@ metrics_obs$nbeta[metrics_obs$loss_min_index]
 ```{r}
 library(ggplot2)
 library(reshape2)
-colnames(metrics_obs$loss) <- lambda_frac
-rownames(metrics_obs$loss) <- alpha_grid
-mat_long <- melt(metrics_obs$loss)
+colnames(metrics_obs$loss_ssq) <- lambda_frac
+rownames(metrics_obs$loss_ssq) <- alpha_grid
+mat_long <- melt(metrics_obs$loss_ssq)
 
 names(mat_long) <- c("alpha", "lambda", "loss")
 mat_long$label <- rep("above", nrow(mat_long))
