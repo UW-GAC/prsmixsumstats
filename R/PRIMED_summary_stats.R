@@ -79,7 +79,7 @@ make_sumstats <- function(x, y, center=TRUE){
 #' @param maxiter is maximum number of cyclic coordinate descent iterations.
 #' One iteration is over all p parameters.
 #' @param tol is tolerance to check convergence
-#' @param max_backtrack maximum to backtrack
+#' @param beta_threshold set betas with absolute value below this threshold to 0
 #' @param verbose prints summary results at each iteration if verbose=TRUE
 #' @details
 #' Cyclic coordinate descent is used to fit an elastic net model based on minimizing penalized least squared.
@@ -90,7 +90,7 @@ make_sumstats <- function(x, y, center=TRUE){
 #'
 #'
 glmnet_sumstats <- function(sumstats, beta_init = NULL, alpha, lambda, penalty_factor = NULL,
-                               maxiter=500, tol=1e-5, max_backtrack=10, verbose=FALSE){
+                               maxiter=500, tol=1e-5, beta_threshold=1e-6, verbose=FALSE){
   ## temp skip validate_sumstats(sumstats)
   xx <- sumstats$xx
   xy <- sumstats$xy
@@ -156,6 +156,7 @@ glmnet_sumstats <- function(sumstats, beta_init = NULL, alpha, lambda, penalty_f
 
   names(beta_curr) <- colnames(xx)
   # filter beta on threshold (default 1e-6) - set to zero, don't remove from vector
+  beta_curr[abs(beta_curr) < beta_threshold] <- 0
   return(list(beta=beta_curr, loss=loss_curr, iter=iter, converge=converge, alpha=alpha, lambda=lambda))
 }
 

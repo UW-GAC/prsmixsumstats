@@ -12,7 +12,7 @@ glmnet_sumstats(
   penalty_factor = NULL,
   maxiter = 500,
   tol = 1e-05,
-  max_backtrack = 10,
+  beta_threshold = 1e-06,
   verbose = FALSE
 )
 }
@@ -34,7 +34,7 @@ One iteration is over all p parameters.}
 
 \item{tol}{is tolerance to check convergence}
 
-\item{max_backtrack}{maximum to backtrack}
+\item{beta_threshold}{set betas below this threshold to 0}
 
 \item{verbose}{prints summary results at each iteration if verbose=TRUE}
 }

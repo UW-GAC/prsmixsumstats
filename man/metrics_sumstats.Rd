@@ -2,7 +2,8 @@
 % Please edit documentation in R/PRIMED_summary_stats.R
 \name{metrics_sumstats}
 \alias{metrics_sumstats}
-\title{calculate metrics for summary stats}
+\title{calculate metrics for summary stats
+assumes yvar = 1}
 \usage{
 metrics_sumstats(sumstats, fit_grid)
 }
@@ -16,4 +17,5 @@ list of auc, loss, nbeta
 }
 \description{
 calculate metrics for summary stats
+assumes yvar = 1
 }
