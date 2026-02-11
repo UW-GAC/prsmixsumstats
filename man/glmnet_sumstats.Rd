@@ -12,7 +12,6 @@ glmnet_sumstats(
   penalty_factor = NULL,
   maxiter = 500,
   tol = 1e-05,
-  max_backtrack = 10,
   verbose = FALSE
 )
 }
@@ -33,8 +32,6 @@ Typically used as value of 0 for terms not to be penalized and 1 for terms to pe
 One iteration is over all p parameters.}
 
 \item{tol}{is tolerance to check convergence}
-
-\item{max_backtrack}{maximum to backtrack}
 
 \item{verbose}{prints summary results at each iteration if verbose=TRUE}
 }
