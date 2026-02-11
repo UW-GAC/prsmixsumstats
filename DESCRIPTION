@@ -1,6 +1,6 @@
 Package: prsmixsumstats
 Title: Generate summary statistics for PRSmix elastic net
-Version: 0.1.0
+Version: 0.2.0
 Author: Dan Schaid, Stephanie Gogarten 
 Maintainer: Stephanie Gogarten <sdmorris@uw.edu>
 Description: Generate summary statistics for PRSmix elastic net.

@@ -95,58 +95,14 @@ glmnet_sumstats <- function(sumstats, beta_init = NULL, alpha, lambda, penalty_f
   xx <- sumstats$xx
   xy <- sumstats$xy
 
-  update_beta <- function(index, beta_curr, loss_curr) {
-    ## single coordinate update with line search
-    # compute numerator and denominator
-    numer <- xy[index] - xx[index, ] %*% beta_curr + xx[index,index] * beta_curr[index]
-    denom <- xx[index,index] + lambda_pen[index] * (1 - alpha)
 
-
-    # propose update using soft-thresholding
-    beta_candidate <- soft(numer, alpha * lambda_pen[index]) / denom
-
-    # line search: try step sizes 1, 1/2, 1/4, ...
-    step <- 1.0
-
-
-    for (k in 1:max_backtrack) {
-
-      beta_trial <- (1 - step) * beta_curr[index] + step * beta_candidate
-      loss_trial <- update_loss(loss_old, beta_curr, index, beta_trial,
-                                xx, xy, alpha, lambda_pen)
-
-      if (loss_trial <= loss_curr) {   # accept if loss decreases
-        beta_curr[index] <- beta_trial
-        loss_curr <- loss_trial
-        break
-      }
-
-      step <- step / 2  # backtrack
-    }
-
-    list(beta = beta_curr, loss = loss_curr)
-  }
   compute_loss <- function(beta, xx, xy, alpha,lambda_pen){
-    loss <-  sum( t(beta) %*% xx %*% beta - 2*t(beta) %*% xy) + alpha*sum(lambda_pen * abs(beta)) +
+    ## assume y'y = 1 and divide squared loss by 2
+    loss <-  .5 + .5 * t(beta) %*% xx %*% beta - t(beta) %*% xy + alpha*sum(lambda_pen * abs(beta)) +
       ((1-alpha)/2)*sum(lambda_pen*beta^2)
     return(loss)
   }
-  update_loss <- function(loss_old, beta, j, new_val, xx, xy, alpha, lambda_pen) {
-    old_val <- beta[j]
-    delta   <- new_val - old_val
 
-    # --- Frobenius part ---
-    ## fixed by changing index i to j
-    xb <- sum(xx[j, ] * beta )
-    dQ   <- 2 * delta * (xb - xy[j]) + delta^2 * xx[j, j]
-
-    pen_l1_delta <- alpha * lambda_pen[j] * (abs(new_val) - abs(old_val))
-    pen_l2_delta <- ((1 - alpha)/2) * lambda_pen[j] * (new_val^2 - old_val^2)
-
-    loss_new <- loss_old + (dQ + pen_l1_delta + pen_l2_delta)
-
-    return(loss_new)
-  }
 
   np <- ncol(xx)
   if(is.null(penalty_factor)) penalty_factor <- rep(1, np)
@@ -172,23 +128,24 @@ glmnet_sumstats <- function(sumstats, beta_init = NULL, alpha, lambda, penalty_f
     active <- grad > alpha * lambda_pen
 
     loss_old <- loss_curr
-    beta_old  <- beta_curr
+    beta_old <- beta_curr
 
     for(j in 1:np){
       if(!active[j]) next
-      res <- update_beta(j, beta_curr, loss_curr)
-      beta_curr <- res$beta
-      loss_curr <- res$loss
+
+      numer <- xy[j] - xx[j, ] %*% beta_curr + xx[j,j] * beta_curr[j]
+      denom <- xx[j,j] + lambda_pen[j] * (1 - alpha)
+      beta_curr[j] <- soft(numer, alpha * lambda_pen[j]) / denom
+
     }
 
+    loss_curr <-  compute_loss(beta_curr, xx, xy, alpha,lambda_pen)
 
     loss_rel_change <- abs(loss_curr - loss_old) / (abs(loss_old) + tol)
     beta_change <- max(abs(beta_curr - beta_old))
 
     if (verbose) {
-      cat("active set: iter =", iter,
-          ", loss_curr =", loss_curr, "loss_rel_change = ", loss_rel_change,
-          ", beta range =", range(beta_curr), "\n")
+      cat("iter =", iter, ", loss_curr =", loss_curr, ", n active = ", sum(active), ", n non-zero beta = ", sum(abs(beta_curr) > 1e-6), ", beta range =", range(beta_curr), "\n")
     }
     if (loss_rel_change < tol || beta_change < tol) {
       converge <- TRUE
@@ -198,6 +155,7 @@ glmnet_sumstats <- function(sumstats, beta_init = NULL, alpha, lambda, penalty_f
 
 
   names(beta_curr) <- colnames(xx)
+  # filter beta on threshold (default 1e-6) - set to zero, don't remove from vector
   return(list(beta=beta_curr, loss=loss_curr, iter=iter, converge=converge, alpha=alpha, lambda=lambda))
 }
 
@@ -272,6 +230,7 @@ sim_test_dat <- function(nsubj, nprs, prev=.1, beta.sd=2, seed=42){
 #' @export
 glmnet_sumstats_grid <- function(sumstats, alpha_grid, lambda_frac, penalty_factor, maxiter=500, tol=1e-6, verbose=FALSE){
 
+
   nalpha <- length(alpha_grid)
   nlambda <- length(lambda_frac)
   fit_grid <- matrix(list(), nrow=nalpha, ncol=nlambda)
@@ -301,7 +260,8 @@ glmnet_sumstats_grid <- function(sumstats, alpha_grid, lambda_frac, penalty_fact
       ptm <- proc.time()
 
 
-      fit_grid[[i,j]] <-  glmnet_sumstats(sumstats, beta_init, alpha=alpha, lambda=lambda, penalty_factor,  maxiter=maxiter, tol=tol, verbose=FALSE)
+
+      fit_grid[[i,j]] <-  glmnet_sumstats(sumstats, beta_init, alpha=alpha, lambda=lambda, penalty_factor,  maxiter=maxiter, tol=tol, verbose=verbose)
       if(verbose) print(proc.time() - ptm)
     }
   }
@@ -312,6 +272,7 @@ glmnet_sumstats_grid <- function(sumstats, alpha_grid, lambda_frac, penalty_fact
 
 
 #' calculate metrics for summary stats
+#' assumes yvar = 1
 #' @param sumstats list with items xx, xy
 #' @param fit_grid output of glmnet_sumstats
 #' @return list of auc, loss, nbeta
@@ -323,24 +284,30 @@ metrics_sumstats <- function(sumstats, fit_grid){
 
   nalpha <- nrow(fit_grid)
   nlambda <- ncol(fit_grid)
-  yvar <- 1
-  auc <- bic <- nbeta <- loss <- matrix(0, nalpha, nlambda)
+
+  auc <- bic <- nbeta <- loss_ssq <- pen_func <- matrix(0, nalpha, nlambda)
   for(i in 1:nalpha){
     for(j in 1:nlambda){
+      alpha <- fit_grid[[i,j]]$alpha
+      lambda <- fit_grid[[i,j]]$lambda
       beta <- as.vector(fit_grid[[i,j]]$beta)
-      tmp <- auc_glmnet_sumstats(beta, sumstats$xx, yvar, ncase, ncont)
+      tmp <- auc_glmnet_sumstats(beta, sumstats$xx, vary=1, ncase, ncont)
       auc[i,j] <- tmp$auc
-      loss[i,j] <- yvar - 2*t(beta) %*% sumstats$xy +  t(beta) %*% sumstats$xx %*% beta
+      ## assume y'y = 1 and divide squared loss by 2
+      loss_ssq[i,j] <-  .5 + .5 * t(beta) %*% sumstats$xx %*% beta - t(beta) %*% sumstats$xy
       nbeta[i,j] <- sum( abs(fit_grid[[i,j]]$beta) > 1e-6)
-      bic[i,j] <- nobs * log(loss[i,j]) + nbeta[i,j]*log(nobs)
+      bic[i,j] <- nobs * log(loss_ssq[i,j]) + nbeta[i,j]*log(nobs)
+      pen_func[i,j] <- loss_ssq[i,j]  + alpha*sum(fit_grid$penalty_factor*lambda * abs(beta)) +
+        ((1-alpha)/2)*sum(fit_grid$penalty_factor * lambda * beta^2)
     }
   }
   min_bic <- min(bic)
   bic_min_index <- which(bic == min_bic, arr.ind = TRUE)
 
-  min_loss <- min(loss)
-  loss_min_index <- which(loss == min_loss, arr.ind = TRUE)
-  return(list(auc=auc, bic=bic, loss=loss, nbeta=nbeta, bic_min_index = bic_min_index, loss_min_index = loss_min_index))
+  min_loss <- min(loss_ssq)
+  loss_min_index <- which(loss_ssq ==  min_loss, arr.ind = TRUE)
+  return(list(auc=auc, bic=bic, loss_ssq=loss_ssq, pen_func=pen_func,
+              nbeta=nbeta, bic_min_index = bic_min_index, loss_min_index = loss_min_index))
 
 }
 
