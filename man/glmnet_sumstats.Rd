@@ -12,6 +12,7 @@ glmnet_sumstats(
   penalty_factor = NULL,
   maxiter = 500,
   tol = 1e-05,
+  beta_threshold = 1e-06,
   verbose = FALSE
 )
 }
@@ -32,6 +33,8 @@ Typically used as value of 0 for terms not to be penalized and 1 for terms to pe
 One iteration is over all p parameters.}
 
 \item{tol}{is tolerance to check convergence}
+
+\item{beta_threshold}{set betas below this threshold to 0}
 
 \item{verbose}{prints summary results at each iteration if verbose=TRUE}
 }
