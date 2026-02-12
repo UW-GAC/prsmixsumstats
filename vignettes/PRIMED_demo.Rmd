@@ -92,10 +92,10 @@ mat_long <- melt(metrics_obs$loss_ssq)
 names(mat_long) <- c("alpha", "lambda", "loss")
 mat_long$label <- rep("above", nrow(mat_long))
 
-k <- index_mat_to_vec(metrics_obs$loss_min_index[1],metrics_obs$loss_min_index[2], nrow(metrics_obs$loss))
+k <- index_mat_to_vec(metrics_obs$loss_min_index[1],metrics_obs$loss_min_index[2], nrow(metrics_obs$loss_ssq))
 mat_long$label[k] <- "min-loss"
 
-k <- index_mat_to_vec(metrics_obs$bic_min_index[1],metrics_obs$bic_min_index[2] , nrow(metrics_obs$loss))
+k <- index_mat_to_vec(metrics_obs$bic_min_index[1],metrics_obs$bic_min_index[2] , nrow(metrics_obs$loss_ssq))
 mat_long$label[k] <- "min-bic"
 
 titl <- paste0("Loss Across Grid")
