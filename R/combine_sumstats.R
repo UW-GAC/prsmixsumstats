@@ -7,13 +7,16 @@
 #' The results are centered and scaled and divided by the number of observations.
 #' If the sumstats objects provided are not already centered, centering is done
 #' in this function.
+#' 
+#' The function checks for values of 0 on the diagonal of the X'X matrix after summing.
+#' If any are found, those columns are removed from the sumstats object.
 #'
 #' Use this function with the results of \code{\link{make_sumstats}}.
 #'
 #' @param sumstats list of sumstats objects
 #' @return list of 1. sumstats object, 2. yvar (which should be 1),
 #' 3. beta_multiplier, 4. list of columns with incomplete data (missing in at least
-#' one list element)
+#' one list element), 5. list of columns with diagonal elements = 0 in X'X matrix
 #' @export
 combine_sumstats <- function(sumstats){
   lapply(sumstats, validate_sumstats)
@@ -50,6 +53,15 @@ combine_sumstats <- function(sumstats){
         ysum <- ysum + attr(sumstats[[index]], "ysum")
         yssq <- yssq + attr(sumstats[[index]], "yssq")
       }
+  }
+
+  # if diagonal elements are zero, remove those elements from xx and xy
+  diag_zero <- which(diag(xx) == 0)
+  diag_zero_cols <- colnames(xx)[diag_zero]
+  if (length(diag_zero) > 0) {
+    xx <- xx[-diag_zero, -diag_zero, drop=FALSE]
+    xy <- xy[-diag_zero, drop=FALSE]
+    colsum <- colsum[-diag_zero]
   }
 
   if (centered) {
@@ -97,6 +109,7 @@ combine_sumstats <- function(sumstats){
   validate_sumstats(ss)
 
   return(list(sumstats=ss, yvar=yvar, beta_multiplier=beta_multiplier,
-              incomplete_cols=matched_sumstats$incomplete_cols))
+              incomplete_cols=matched_sumstats$incomplete_cols,
+              diag_zero_cols=diag_zero_cols))
 }
 
