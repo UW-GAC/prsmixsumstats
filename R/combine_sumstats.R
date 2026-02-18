@@ -58,10 +58,10 @@ combine_sumstats <- function(sumstats){
   # if diagonal elements are zero, remove those elements from xx and xy
   diag_zero <- which(diag(xx) == 0)
   if (length(diag_zero) > 0) {
-    xx <- xx[-diag_zero, -diag_zero, drop=FALSE]
-    xy <- xy[-diag_zero, drop=FALSE]
-    colsum <- colsum[-diag_zero]
     diag_zero_cols <- colnames(xx)[diag_zero]
+    xx <- xx[-diag_zero, -diag_zero, drop=FALSE]
+    xy <- xy[-diag_zero, , drop=FALSE]
+    colsum <- colsum[-diag_zero]
   } else {
     diag_zero_cols <- character()
   }
