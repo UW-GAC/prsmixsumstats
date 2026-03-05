@@ -264,3 +264,19 @@ test_that("filter_sumstats", {
     expect_true(ncol(chk$xx) > 0)
     expect_true(length(chk$xy) > 0)
 })
+
+
+test_that("combined_sumstats diag 0", {
+    dat <- .example_data(n1=100, n2=50, n3=30, nprs=1000)
+    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y, center=FALSE)
+    ss2 <- make_sumstats(dat[[2]]$x, dat[[2]]$y, center=FALSE)
+    ss3 <- make_sumstats(dat[[3]]$x, dat[[3]]$y, center=FALSE)
+    diag(ss1$xx)[1:5] <- 0
+    diag(ss2$xx)[1:5] <- 0
+    diag(ss3$xx)[1:5] <- 0
+    chk <- combine_sumstats(list(ss1, ss2, ss3))
+    ss <- chk$sumstats
+    expect_equal(nrow(ss$xx), 999)
+    expect_equal(length(ss$xy), 999)
+    expect_equal(chk$diag_zero_cols, colnames(ss1$xx)[1:5])
+})

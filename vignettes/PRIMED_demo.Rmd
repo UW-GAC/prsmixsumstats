@@ -56,9 +56,12 @@ sumstats <- combo_sumstats$sumstats
 alpha_grid <- seq(from=0.9, to=0.1, by= -0.2)
 lambda_frac <- seq(from=1, to=.01, length=10)
 
+## penalty factor should be 0 for covariates and 1 for PRS
+penalty_factor <- rep(0,ncol(sumstats$xx))
+penalty_factor[grepl("PRS", names(penalty_factor))] <- 1
+
 ## note 2-dimensional grid of fits. Each fit is a list
 ## and all fits arranged as matrix (of lists)
-penalty_factor <- rep(1,ncol(sumstats$xx))
 
 fit_obs <- glmnet_sumstats_grid(sumstats, alpha_grid, lambda_frac, penalty_factor, maxiter=500, tol=1e-5, verbose=FALSE)
 ```
