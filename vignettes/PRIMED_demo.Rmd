@@ -58,7 +58,7 @@ lambda_frac <- seq(from=1, to=.01, length=10)
 
 ## penalty factor should be 0 for covariates and 1 for PRS
 penalty_factor <- rep(0,ncol(sumstats$xx))
-penalty_factor[grepl("PRS", names(penalty_factor))] <- 1
+penalty_factor[grepl("^PRS", colnames(sumstats$xx))] <- 1
 
 ## note 2-dimensional grid of fits. Each fit is a list
 ## and all fits arranged as matrix (of lists)
