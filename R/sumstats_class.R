@@ -19,7 +19,7 @@ validate_sumstats <- function(ss) {
     stopifnot(attr(ss, "nsubj") == attr(ss, "nobs") + attr(ss, "nmiss"))
     stopifnot(length(attr(ss, "colsum")) == ncol(ss$xx))
     stopifnot(all(colnames(ss$xx) == rownames(ss$xx)))
-    stopifnot(all(colnames(ss$xx) == colnames(ss$xy)))
+    stopifnot(all(colnames(ss$xx) == rownames(ss$xy)))
     stopifnot(all(colnames(ss$xx) == names(attr(ss, "colsum"))))
     stopifnot(is.logical(attr(ss, "centered")))
 }
