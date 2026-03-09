@@ -34,3 +34,19 @@ drop_cols_sumstats <- function(sumstats, drop_cols) {
     validate_sumstats(sumstats_filt)
     return(sumstats_filt)
 }
+
+
+rename_col_sumstats <- function(sumstats, old_name, new_name) {
+    if (!(old_name %in% colnames(sumstats$xx))) {
+        stop(paste0("Column ", old_name, " not found in sumstats"))
+    }
+    if (new_name %in% colnames(sumstats$xx)) {
+        stop(paste0("Column ", new_name, " already exists in sumstats"))
+    }
+    colnames(sumstats$xx)[colnames(sumstats$xx) == old_name] <- new_name
+    rownames(sumstats$xx)[rownames(sumstats$xx) == old_name] <- new_name
+    rownames(sumstats$xy)[rownames(sumstats$xy) == old_name] <- new_name
+    names(attr(sumstats, "colsum"))[names(attr(sumstats, "colsum")) == old_name] <- new_name
+    validate_sumstats(sumstats)
+    return(sumstats)
+}

@@ -280,3 +280,29 @@ test_that("combined_sumstats diag 0", {
     expect_equal(length(ss$xy), 999)
     expect_equal(chk$diag_zero_cols, colnames(ss1$xx)[1:5])
 })
+
+
+test_that("rename_col_sumstats", {
+    dat <- sim_test_dat(10, nprs=10)
+    ss1 <- make_sumstats(dat$x, dat$y)
+    chk <- rename_col_sumstats(ss1, old_name="PRS001", new_name="PRS001_renamed")
+    expect_equal(colnames(chk$xx)[colnames(ss1$xx) == "PRS001"], "PRS001_renamed")
+    expect_equal(rownames(chk$xx)[rownames(ss1$xx) == "PRS001"], "PRS001_renamed")
+    expect_equal(rownames(chk$xy)[rownames(ss1$xy) == "PRS001"], "PRS001_renamed")
+    expect_equal(names(attr(chk, "colsum"))[names(attr(ss1, "colsum")) == "PRS001"], "PRS001_renamed")
+})
+
+
+test_that("validate_sumstats", {
+    dat <- sim_test_dat(10, nprs=10)
+    ss1 <- make_sumstats(dat$x, dat$y)
+    ss2 <- ss1
+    ss2$xx <- ss2$xx[1:5, 1:5]
+    expect_error(validate_sumstats(ss2))
+    ss2 <- ss1
+    rownames(ss2$xy) <- rev(rownames(ss2$xy))
+    expect_error(validate_sumstats(ss2))
+    ss2 <- ss1
+    ss2$xx <- ss2$xx[1,]
+    expect_error(validate_sumstats(ss2))
+})

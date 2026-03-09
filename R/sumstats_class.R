@@ -13,6 +13,8 @@ new_sumstats <- function(xx, xy, nsubj, nmiss, nobs, colsum, ysum, yssq, centere
 
 
 validate_sumstats <- function(ss) {
+    stopifnot(is.matrix(ss$xx))
+    stopifnot(is.matrix(ss$xy))
     stopifnot(nrow(ss$xx) == ncol(ss$xx))
     stopifnot(nrow(ss$xx) == nrow(ss$xy))
     stopifnot(ncol(ss$xy) == 1)
