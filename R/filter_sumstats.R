@@ -36,6 +36,16 @@ drop_cols_sumstats <- function(sumstats, drop_cols) {
 }
 
 
+#' Rename a column in a sumstats object
+#' 
+#' Rename a column in a sumstats object
+#' 
+#' The intended use of this function is to rename columns in a sumstats object
+#' @param sumstats sumstats object
+#' @param old_name column name to rename
+#' @param new_name new column name
+#' @return sumstats object with renamed column
+#' @export
 rename_col_sumstats <- function(sumstats, old_name, new_name) {
     if (!(old_name %in% colnames(sumstats$xx))) {
         stop(paste0("Column ", old_name, " not found in sumstats"))
