@@ -70,7 +70,7 @@ fit_obs <- glmnet_sumstats_grid(sumstats, alpha_grid, lambda_frac, penalty_facto
 ## metrics 
 
 ```{r}
-metrics_obs <- metrics_sumstats(sumstats, fit_obs)
+metrics_obs <- metrics_sumstats(sumstats, fit_obs, penalty_factor, trait_type = "binary")
 metrics_obs$bic_min_index
 metrics_obs$loss_min_index
 

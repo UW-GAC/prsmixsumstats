@@ -174,26 +174,6 @@ soft <- function(x, gamma){
 
 
 
-#' calculate AUC from glmnet_sumstats results
-#' @param beta beta from glmnet_sumstats
-#' @param xx X'X matrix that went into glmnet_sumstats
-#' @param vary variance of Y
-#' @param ncase number of cases
-#' @param ncont number of controls
-#' @return list with AUC and R2
-#' @importFrom stats pnorm
-#' @export
-auc_glmnet_sumstats <- function(beta, xx, vary, ncase, ncont){
-  ssr <- t(beta) %*% xx %*% beta
-  sst <- vary #* nsubj
-  r2 <- ssr/sst
-  a <- (ncase + ncont)^2/(ncase * ncont)
-  d <- sqrt(a*r2)/sqrt(1-r2)
-  auc <- pnorm(d/sqrt(2))
-  return(list(auc=auc, r2=r2))
-}
-
-
 #' Simulate example data
 #' @param nsubj number of subjects
 #' @param nprs number of PRS
@@ -271,46 +251,6 @@ glmnet_sumstats_grid <- function(sumstats, alpha_grid, lambda_frac, penalty_fact
   return(fit_grid)
 }
 
-
-#' calculate metrics for summary stats
-#' assumes yvar = 1
-#' @param sumstats list with items xx, xy
-#' @param fit_grid output of glmnet_sumstats
-#' @return list of auc, loss, nbeta
-#' @export
-metrics_sumstats <- function(sumstats, fit_grid){
-  ncase <- attr(sumstats, "ysum")
-  nobs <- attr(sumstats, "nobs")
-  ncont <- nobs - ncase
-
-  nalpha <- nrow(fit_grid)
-  nlambda <- ncol(fit_grid)
-
-  auc <- bic <- nbeta <- loss_ssq <- pen_func <- matrix(0, nalpha, nlambda)
-  for(i in 1:nalpha){
-    for(j in 1:nlambda){
-      alpha <- fit_grid[[i,j]]$alpha
-      lambda <- fit_grid[[i,j]]$lambda
-      beta <- as.vector(fit_grid[[i,j]]$beta)
-      tmp <- auc_glmnet_sumstats(beta, sumstats$xx, vary=1, ncase, ncont)
-      auc[i,j] <- tmp$auc
-      ## assume y'y = 1 and divide squared loss by 2
-      loss_ssq[i,j] <-  .5 + .5 * t(beta) %*% sumstats$xx %*% beta - t(beta) %*% sumstats$xy
-      nbeta[i,j] <- sum( abs(fit_grid[[i,j]]$beta) > 1e-6)
-      bic[i,j] <- nobs * log(loss_ssq[i,j]) + nbeta[i,j]*log(nobs)
-      pen_func[i,j] <- loss_ssq[i,j]  + alpha*sum(fit_grid$penalty_factor*lambda * abs(beta)) +
-        ((1-alpha)/2)*sum(fit_grid$penalty_factor * lambda * beta^2)
-    }
-  }
-  min_bic <- min(bic)
-  bic_min_index <- which(bic == min_bic, arr.ind = TRUE)
-
-  min_loss <- min(loss_ssq)
-  loss_min_index <- which(loss_ssq ==  min_loss, arr.ind = TRUE)
-  return(list(auc=auc, bic=bic, loss_ssq=loss_ssq, pen_func=pen_func,
-              nbeta=nbeta, bic_min_index = bic_min_index, loss_min_index = loss_min_index))
-
-}
 
 
 #' convert matrix indices to vector index

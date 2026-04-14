@@ -12,7 +12,7 @@ combine_sumstats(sumstats)
 \value{
 list of 1. sumstats object, 2. yvar (which should be 1),
 3. beta_multiplier, 4. list of columns with incomplete data (missing in at least
-one list element)
+one list element), 5. list of columns with diagonal elements = 0 in X'X matrix
 }
 \description{
 Combines summary statistics, centers and scales
@@ -23,6 +23,9 @@ in one list element but not others are set to zero when computing the sum.
 The results are centered and scaled and divided by the number of observations.
 If the sumstats objects provided are not already centered, centering is done
 in this function.
+
+The function checks for values of 0 on the diagonal of the X'X matrix after summing.
+If any are found, those columns are removed from the sumstats object.
 
 Use this function with the results of \code{\link{make_sumstats}}.
 }

@@ -34,7 +34,7 @@ One iteration is over all p parameters.}
 
 \item{tol}{is tolerance to check convergence}
 
-\item{beta_threshold}{set betas below this threshold to 0}
+\item{beta_threshold}{set betas with absolute value below this threshold to 0}
 
 \item{verbose}{prints summary results at each iteration if verbose=TRUE}
 }
