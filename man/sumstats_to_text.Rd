@@ -17,7 +17,7 @@ sumstats_from_text(sumst_text_files)
 \value{
 sumstats_to_text: vector of filenames
 
-sumstats_from_text: sumstats object
+sumstats_from_text: RDS file containing sumstats object
 }
 \description{
 Convert sumstats to text files and vice versa
@@ -33,5 +33,6 @@ ss1 <- make_sumstats(dat$x, dat$y, center=FALSE)
 ssfile <- paste0(tempfile(), ".rds")
 saveRDS(ss1, ssfile)
 files <- sumstats_to_text(ssfile)
-ss2 <- sumstats_from_text(files)
+ssfile2 <- sumstats_from_text(files)
+ss2 <- readRDS(ssfile2)
 }

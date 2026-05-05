@@ -15,7 +15,8 @@
 #' ssfile <- paste0(tempfile(), ".rds")
 #' saveRDS(ss1, ssfile)
 #' files <- sumstats_to_text(ssfile)
-#' ss2 <- sumstats_from_text(files)
+#' ssfile2 <- sumstats_from_text(files)
+#' ss2 <- readRDS(ssfile2)
 #' @importFrom methods is
 #' @importFrom utils write.table
 #' @export
@@ -47,7 +48,7 @@ sumstats_to_text <- function(sumstats_file) {
 
 #' @rdname sumstats_to_text
 #' @param sumst_text_files vector of files produced by sumstats_to_text
-#' @returns sumstats_from_text: sumstats object
+#' @returns sumstats_from_text: RDS file containing sumstats object
 #' @importFrom utils read.table
 #' @export
 sumstats_from_text <- function(sumst_text_files) {
@@ -61,6 +62,9 @@ sumstats_from_text <- function(sumst_text_files) {
     colsum <- read.table(colsum_file)
     colsum <- setNames(colsum[[2]], colsum[[1]])
     attr_tbl <- read.table(attr_file, header=TRUE, sep="\t")
-    new_sumstats(xx, xy, attr_tbl$nsubj, attr_tbl$nmiss, attr_tbl$nobs, 
+    ss <- new_sumstats(xx, xy, attr_tbl$nsubj, attr_tbl$nmiss, attr_tbl$nobs, 
                  colsum, attr_tbl$ysum, attr_tbl$yssq, attr_tbl$centered)
+    newfile <- sub("_xx.txt", ".rds", xx_file)
+    saveRDS(ss, newfile)
+    return(newfile)
 }
