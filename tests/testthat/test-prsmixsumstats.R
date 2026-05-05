@@ -306,3 +306,15 @@ test_that("validate_sumstats", {
     ss2$xx <- ss2$xx[1,]
     expect_error(validate_sumstats(ss2))
 })
+
+
+test_that("sumstats_to_text", {
+    dat <- sim_test_dat(100, 1000, prev=.1, beta.sd=2)
+    ss1 <- make_sumstats(dat$x, dat$y, center=FALSE)  
+    ssfile <- paste0(tempfile(), ".rds")
+    saveRDS(ss1, ssfile)
+    files <- sumstats_to_text(ssfile)
+    ss2 <- sumstats_from_text(files)
+    expect_equal(ss1, ss2)
+    unlink(c(ssfile, files))
+})
