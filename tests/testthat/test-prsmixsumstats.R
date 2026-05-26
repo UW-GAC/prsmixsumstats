@@ -320,3 +320,28 @@ test_that("sumstats_to_text", {
     expect_equal(ss1, ss2)
     unlink(c(ssfile, files, ss2_file))
 })
+
+
+test_that("combine sumstats by cluster", {
+    dat <- .example_data_diffprs(n1=100, n2=50, nprs1=1000, nprs2=1050)
+    ss1a <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
+    ss1b <- make_sumstats(dat[[2]]$x, dat[[2]]$y)
+    dat <- .example_data_diffprs(n1=99, n2=51, nprs1=900, nprs2=1060)
+    ss2a <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
+    ss2b <- make_sumstats(dat[[2]]$x, dat[[2]]$y)
+    ss1 <- list(ss1a, ss1b)
+    ss2 <- list(ss2a, ss2b)
+    comb1 <- combine_sumstats(ss1, scale=FALSE)
+    comb2 <- combine_sumstats(ss2, scale=FALSE)
+    ss_clusters <- list(comb1$sumstats, comb2$sumstats)
+    comb_clust <- sumstats_weighted_ave(ss_clusters, c(1,1))
+    
+    comb12 <- combine_sumstats(list(ss1a, ss1b, ss2a, ss2b))
+    expect_equal(comb_clust$sumstats$xx, comb12$sumstats$xx)
+    expect_equal(comb_clust$sumstats$xy, comb12$sumstats$xy)
+    expect_equal(attributes(comb_clust$sumstats)[-1], attributes(comb12$sumstats)[-1])
+    expect_equal(comb_clust$beta_multiplier, comb12$beta_multiplier)
+    expect_true(setequal(c(comb1$incomplete_cols, comb2$incomplete_cols, comb_clust$incomplete_cols),
+                         comb12$incomplete_cols))
+})
+

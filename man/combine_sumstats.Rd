@@ -4,10 +4,12 @@
 \alias{combine_sumstats}
 \title{Combine summary statistics}
 \usage{
-combine_sumstats(sumstats)
+combine_sumstats(sumstats, scale = TRUE)
 }
 \arguments{
 \item{sumstats}{list of sumstats objects}
+
+\item{scale}{boolean for whether to scale combined sumstats}
 }
 \value{
 list of 1. sumstats object, 2. yvar (which should be 1),

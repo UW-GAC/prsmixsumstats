@@ -14,11 +14,12 @@
 #' Use this function with the results of \code{\link{make_sumstats}}.
 #'
 #' @param sumstats list of sumstats objects
+#' @param scale boolean for whether to scale combined sumstats
 #' @return list of 1. sumstats object, 2. yvar (which should be 1),
 #' 3. beta_multiplier, 4. list of columns with incomplete data (missing in at least
 #' one list element), 5. list of columns with diagonal elements = 0 in X'X matrix
 #' @export
-combine_sumstats <- function(sumstats){
+combine_sumstats <- function(sumstats, scale=TRUE){
   lapply(sumstats, validate_sumstats)
   matched_sumstats <- match_sumstats(sumstats)
   sumstats <- matched_sumstats$sumstats
@@ -66,6 +67,7 @@ combine_sumstats <- function(sumstats){
     diag_zero_cols <- character()
   }
 
+  if (scale) {
   if (centered) {
     xx <- xx / nobs
     xy <- xy / nobs
@@ -106,6 +108,10 @@ combine_sumstats <- function(sumstats){
   ## and b = a * (sdy/sdx)
 
   beta_multiplier <- sdy / sdx
+  } else {
+      beta_multiplier <- 1
+      yvar <- yssq / nobs
+  }
 
   ss <- new_sumstats(xx, xy, nsubj, nmiss, nobs, colsum, ysum, yssq, centered=TRUE)
   validate_sumstats(ss)
@@ -113,5 +119,133 @@ combine_sumstats <- function(sumstats){
   return(list(sumstats=ss, yvar=yvar, beta_multiplier=beta_multiplier,
               incomplete_cols=matched_sumstats$incomplete_cols,
               diag_zero_cols=diag_zero_cols))
+}
+
+
+
+
+#' Compute weighted-average summary statistics across clusters
+#'
+#' Combines cluster-specific summary statistics by taking a weighted average of
+#' per-cluster cross-product quantities. The resulting summary statistics are
+#' centered and scaled so that the diagonal of `xx` is 1 and `xy` is expressed on
+#' the standardized scale.
+#'
+#' Variables with near-zero marginal standard deviation are removed before
+#' scaling, using `sdx > 1e-2`. This avoids numerical instability.
+#'
+#' @param sumstats_clusters A list of cluster-level summary-statistic objects.
+#'   Each element must contain `xx` and `xy`, and must have attributes `nobs`,
+#'   `nsubj`, `nmiss`, `colsum`, `ysum`, and `yssq`.
+#' @param wt Numeric vector of cluster weights. Must have length equal to
+#'   `length(sumstats_clusters)` and sum to 1.
+#'
+#' @return A summary-statistic object created by `new_sumstats()`, with
+#'   additional components:
+#'   \describe{
+#'     \item{beta_multiplier}{Multiplier for converting standardized-scale
+#'       coefficients back to the original predictor scale.}
+#'     \item{yvar}{Weighted-average outcome variance.}
+#'     \item{sdx}{Predictor standard deviations retained after filtering.}
+#'     \item{sdy}{Outcome standard deviation.}
+#'     \item{xx_orig}{Unscaled weighted-average `xx` matrix after filtering.}
+#'     \item{xy_orig}{Unscaled weighted-average `xy` vector after filtering.}
+#'   }
+#'
+#' @details
+#' For each cluster, `xx`, `xy`, and `yssq` are first divided by that cluster's
+#' observed sample size. These per-observation quantities are then combined using
+#' `wt`. Count and sum attributes are accumulated across clusters without
+#' weighting.
+#'
+#' The combined `xx` matrix is scaled to have unit diagonal:
+#' \deqn{xx_{ij} = xx_{ij} / (sdx_i sdx_j)}
+#'
+#' The combined `xy` vector is scaled by predictor and outcome standard
+#' deviations:
+#' \deqn{xy_i = xy_i / (sdx_i sdy)}
+#'
+#' @examples
+#' \dontrun{
+#' sumstats_wt <- sumstats_weighted_ave(sumstats_clusters, wt)
+#' }
+#'
+#' @export
+sumstats_weighted_ave <- function(sumstats_clusters, wt){
+    lapply(sumstats_clusters, validate_sumstats)
+    matched_sumstats <- match_sumstats(sumstats_clusters)
+    sumstats_clusters <- matched_sumstats$sumstats
+    ncluster <- length(sumstats_clusters)
+    
+    ## use first cluster to setup template for 0's to later
+    ## hold summations.
+    xx <- sumstats_clusters[[1]]$xx * 0
+    xy <- sumstats_clusters[[1]]$xy * 0
+    nsubj <- 0
+    nmiss <- 0
+    nobs <- 0
+    colsum <- 0
+    ysum <- 0
+    yssq <- 0
+    yvar <- 0
+    
+    
+    for(index in 1:ncluster){
+        
+        nobs_c <- attr(sumstats_clusters[[index]], "nobs")
+        ## compute ave for each cluster
+        xx_c <- sumstats_clusters[[index]]$xx/nobs_c
+        xy_c <- sumstats_clusters[[index]]$xy/nobs_c
+        yvar_c <- attr(sumstats_clusters[[index]], "yssq")/nobs_c
+        
+        ## combine by wt'd sum
+        xx   <-   xx + wt[index]  * xx_c
+        xy   <-   xy + wt[index]  * xy_c
+        yvar <- yvar + wt[index]  * yvar_c
+        
+        ## totals
+        nsubj <- nsubj + attr(sumstats_clusters[[index]], "nsubj")
+        nmiss <- nmiss + attr(sumstats_clusters[[index]], "nmiss")
+        nobs <-  nobs + attr(sumstats_clusters[[index]], "nobs")
+        colsum <- colsum + attr(sumstats_clusters[[index]], "colsum")
+        ysum <- ysum + attr(sumstats_clusters[[index]], "ysum")
+        yssq <- yssq + attr(sumstats_clusters[[index]], "yssq")
+        
+    }
+    
+    
+    sdx <- sqrt(diag(xx))
+    
+    ## eliminate variables with nearly 0 variance; small var creates very large
+    ## beta_multiplier that might not be robust
+    
+    keep <- (sdx > 1e-2)
+    
+    xx  <- xx[keep, keep]
+    xy  <- xy[keep,, drop=FALSE]
+    sdx <- sdx[keep]
+    
+    #xx_orig <- xx
+    #xy_orig <- xy
+    
+    ## scale xx matrix (x'x) so that diag = 1 and off-diag serve as correlations of cols of x's
+    
+    xx <- xx / (sdx %o% sdx)
+    
+    sdy <- sqrt(yvar)
+    xy  <- xy/ (sdx * sdy)
+    
+    sumstats_wt <- new_sumstats(xx, xy, nsubj, nmiss, nobs, colsum, ysum, yssq, centered=TRUE)
+    #sumstats_wt$beta_multiplier <- sdy / sdx
+    #sumstats_wt$yvar <- yvar
+    #sumstats_wt$sdx <- sdx
+    #sumstats_wt$sdy <- sdy
+    #sumstats_wt$xx_orig <- xx_orig
+    #sumstats_wt$xy_orig <- xy_orig
+    
+    beta_multiplier <- sdy / sdx
+    return(list(sumstats=sumstats_wt, yvar=yvar, beta_multiplier=beta_multiplier,
+                incomplete_cols=matched_sumstats$incomplete_cols))
+    return(sumstats_wt)
 }
 
