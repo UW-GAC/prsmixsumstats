@@ -326,7 +326,7 @@ test_that("combine sumstats by cluster", {
     dat <- .example_data_diffprs(n1=100, n2=50, nprs1=1000, nprs2=1050)
     ss1a <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
     ss1b <- make_sumstats(dat[[2]]$x, dat[[2]]$y)
-    dat <- .example_data_diffprs(n1=99, n2=51, nprs1=900, nprs2=1060)
+    dat <- .example_data_diffprs(n1=70, n2=30, nprs1=900, nprs2=1060)
     ss2a <- make_sumstats(dat[[1]]$x, dat[[1]]$y)
     ss2b <- make_sumstats(dat[[2]]$x, dat[[2]]$y)
     ss1 <- list(ss1a, ss1b)
@@ -334,7 +334,7 @@ test_that("combine sumstats by cluster", {
     comb1 <- combine_sumstats(ss1, scale=FALSE)
     comb2 <- combine_sumstats(ss2, scale=FALSE)
     ss_clusters <- list(comb1$sumstats, comb2$sumstats)
-    comb_clust <- sumstats_weighted_ave(ss_clusters, c(1,1))
+    comb_clust <- sumstats_weighted_ave(ss_clusters, c(150/250,100/250))
     
     comb12 <- combine_sumstats(list(ss1a, ss1b, ss2a, ss2b))
     expect_equal(comb_clust$sumstats$xx, comb12$sumstats$xx)
