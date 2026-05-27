@@ -278,7 +278,7 @@ test_that("combined_sumstats diag 0", {
     ss <- chk$sumstats
     expect_equal(nrow(ss$xx), 999)
     expect_equal(length(ss$xy), 999)
-    expect_equal(chk$diag_zero_cols, colnames(ss1$xx)[1:5])
+    expect_equal(chk$near_zero_var, colnames(ss1$xx)[1:5])
 })
 
 
