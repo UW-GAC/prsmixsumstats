@@ -14,7 +14,7 @@ combine_sumstats(sumstats, scale = TRUE)
 \value{
 list of 1. sumstats object, 2. yvar (which should be 1),
 3. beta_multiplier, 4. list of columns with incomplete data (missing in at least
-one list element), 5. list of columns with variance <= 1e-2 in X'X matrix
+one list element), 5. list of dropped columns with variance <= 1e-2 in X'X matrix (NULL if scale=FALSE)
 }
 \description{
 Combines summary statistics, centers and scales
