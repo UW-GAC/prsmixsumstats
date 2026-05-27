@@ -17,7 +17,7 @@
 #' @param scale boolean for whether to scale combined sumstats
 #' @return list of 1. sumstats object, 2. yvar (which should be 1),
 #' 3. beta_multiplier, 4. list of columns with incomplete data (missing in at least
-#' one list element), 5. list of columns with diagonal elements = 0 in X'X matrix
+#' one list element), 5. list of columns with variance <= 1e-2 in X'X matrix
 #' @export
 combine_sumstats <- function(sumstats, scale=TRUE){
   lapply(sumstats, validate_sumstats)
@@ -55,19 +55,23 @@ combine_sumstats <- function(sumstats, scale=TRUE){
         yssq <- yssq + attr(sumstats[[index]], "yssq")
       }
   }
+  
+  if (scale) {
 
-  # if diagonal elements are zero, remove those elements from xx and xy
-  diag_zero <- which(diag(xx) == 0)
-  if (length(diag_zero) > 0) {
-    diag_zero_cols <- colnames(xx)[diag_zero]
-    xx <- xx[-diag_zero, -diag_zero, drop=FALSE]
-    xy <- xy[-diag_zero, , drop=FALSE]
-    colsum <- colsum[-diag_zero]
-  } else {
-    diag_zero_cols <- character()
+  sdx <- sqrt(diag(xx))
+  
+  ## eliminate variables with nearly 0 variance; small var creates very large
+  ## beta_multiplier that might not be robust
+  
+  keep <- (sdx > 1e-2)
+  near_zero_var <- colnames(xx)[!keep]
+  if (length(near_zero_var) > 0) {
+      xx  <- xx[keep, keep]
+      xy  <- xy[keep,, drop=FALSE]
+      colsum <- colsum[keep]
+      sdx <- sdx[keep]
   }
 
-  if (scale) {
   if (centered) {
     xx <- xx / nobs
     xy <- xy / nobs
@@ -118,7 +122,7 @@ combine_sumstats <- function(sumstats, scale=TRUE){
 
   return(list(sumstats=ss, yvar=yvar, beta_multiplier=beta_multiplier,
               incomplete_cols=matched_sumstats$incomplete_cols,
-              diag_zero_cols=diag_zero_cols))
+              near_zero_var=near_zero_var))
 }
 
 
@@ -220,10 +224,13 @@ sumstats_weighted_ave <- function(sumstats_clusters, wt){
     ## beta_multiplier that might not be robust
     
     keep <- (sdx > 1e-2)
-    
-    xx  <- xx[keep, keep]
-    xy  <- xy[keep,, drop=FALSE]
-    sdx <- sdx[keep]
+    near_zero_var <- colnames(xx)[!keep]
+    if (length(near_zero_var) > 0) {
+        xx  <- xx[keep, keep]
+        xy  <- xy[keep,, drop=FALSE]
+        colsum <- colsum[keep]
+        sdx <- sdx[keep]
+    }
     
     #xx_orig <- xx
     #xy_orig <- xy
@@ -236,6 +243,7 @@ sumstats_weighted_ave <- function(sumstats_clusters, wt){
     xy  <- xy/ (sdx * sdy)
     
     sumstats_wt <- new_sumstats(xx, xy, nsubj, nmiss, nobs, colsum, ysum, yssq, centered=TRUE)
+    validate_sumstats(sumstats_wt)
     #sumstats_wt$beta_multiplier <- sdy / sdx
     #sumstats_wt$yvar <- yvar
     #sumstats_wt$sdx <- sdx
@@ -245,7 +253,8 @@ sumstats_weighted_ave <- function(sumstats_clusters, wt){
     
     beta_multiplier <- sdy / sdx
     return(list(sumstats=sumstats_wt, yvar=yvar, beta_multiplier=beta_multiplier,
-                incomplete_cols=matched_sumstats$incomplete_cols))
+                incomplete_cols=matched_sumstats$incomplete_cols,
+                near_zero_var=near_zero_var))
     return(sumstats_wt)
 }
 
