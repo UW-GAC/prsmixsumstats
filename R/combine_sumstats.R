@@ -58,7 +58,7 @@ combine_sumstats <- function(sumstats, scale=TRUE){
   
   if (scale) {
 
-  sdx <- sqrt(diag(xx))
+  sdx <- sqrt(diag(xx)/nobs)
   
   ## eliminate variables with nearly 0 variance; small var creates very large
   ## beta_multiplier that might not be robust
