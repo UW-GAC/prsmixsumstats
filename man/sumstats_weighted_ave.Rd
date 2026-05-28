@@ -4,7 +4,7 @@
 \alias{sumstats_weighted_ave}
 \title{Compute weighted-average summary statistics across clusters}
 \usage{
-sumstats_weighted_ave(sumstats_clusters, wt)
+sumstats_weighted_ave(sumstats_clusters, wt, no_drop = character())
 }
 \arguments{
 \item{sumstats_clusters}{A list of cluster-level summary-statistic objects.
@@ -13,19 +13,14 @@ Each element must contain `xx` and `xy`, and must have attributes `nobs`,
 
 \item{wt}{Numeric vector of cluster weights. Must have length equal to
 `length(sumstats_clusters)` and sum to 1.}
+
+\item{no_drop}{columns that should not be dropped even if their variance is small (e.g. covariates in the model)}
 }
 \value{
-A summary-statistic object created by `new_sumstats()`, with
-  additional components:
-  \describe{
-    \item{beta_multiplier}{Multiplier for converting standardized-scale
-      coefficients back to the original predictor scale.}
-    \item{yvar}{Weighted-average outcome variance.}
-    \item{sdx}{Predictor standard deviations retained after filtering.}
-    \item{sdy}{Outcome standard deviation.}
-    \item{xx_orig}{Unscaled weighted-average `xx` matrix after filtering.}
-    \item{xy_orig}{Unscaled weighted-average `xy` vector after filtering.}
-  }
+list of 1. sumstats object, 2. yvar (which should be 1),
+3. beta_multiplier (Multiplier for converting standardized-scale
+      coefficients back to the original predictor scale), 4. list of columns with incomplete data (missing in at least
+one list element), 5. list of dropped columns with variance <= 1e-2 in X'X matrix (NULL if scale=FALSE)
 }
 \description{
 Combines cluster-specific summary statistics by taking a weighted average of

@@ -4,16 +4,19 @@
 \alias{combine_sumstats}
 \title{Combine summary statistics}
 \usage{
-combine_sumstats(sumstats, scale = TRUE)
+combine_sumstats(sumstats, scale = TRUE, no_drop = character())
 }
 \arguments{
 \item{sumstats}{list of sumstats objects}
 
 \item{scale}{boolean for whether to scale combined sumstats}
+
+\item{no_drop}{columns that should not be dropped even if their variance is small (e.g. covariates in the model)}
 }
 \value{
 list of 1. sumstats object, 2. yvar (which should be 1),
-3. beta_multiplier, 4. list of columns with incomplete data (missing in at least
+3. beta_multiplier (Multiplier for converting standardized-scale
+      coefficients back to the original predictor scale), 4. list of columns with incomplete data (missing in at least
 one list element), 5. list of dropped columns with variance <= 1e-2 in X'X matrix (NULL if scale=FALSE)
 }
 \description{

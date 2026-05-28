@@ -15,11 +15,13 @@
 #'
 #' @param sumstats list of sumstats objects
 #' @param scale boolean for whether to scale combined sumstats
+#' @param no_drop columns that should not be dropped even if their variance is small (e.g. covariates in the model)
 #' @return list of 1. sumstats object, 2. yvar (which should be 1),
-#' 3. beta_multiplier, 4. list of columns with incomplete data (missing in at least
+#' 3. beta_multiplier (Multiplier for converting standardized-scale
+#'       coefficients back to the original predictor scale), 4. list of columns with incomplete data (missing in at least
 #' one list element), 5. list of dropped columns with variance <= 1e-2 in X'X matrix (NULL if scale=FALSE)
 #' @export
-combine_sumstats <- function(sumstats, scale=TRUE){
+combine_sumstats <- function(sumstats, scale=TRUE, no_drop=character()){
   lapply(sumstats, validate_sumstats)
   matched_sumstats <- match_sumstats(sumstats)
   sumstats <- matched_sumstats$sumstats
@@ -63,8 +65,9 @@ combine_sumstats <- function(sumstats, scale=TRUE){
   ## eliminate variables with nearly 0 variance; small var creates very large
   ## beta_multiplier that might not be robust
   
-  keep <- (sdx > 1e-2)
+  keep <- (sdx > 1e-2) | (colnames(xx) %in% no_drop)
   near_zero_var <- colnames(xx)[!keep]
+  if (any(no_drop %in% near_zero_var)) stop("can't drop columns in no_drop")
   if (length(near_zero_var) > 0) {
       xx  <- xx[keep, keep]
       xy  <- xy[keep,, drop=FALSE]
@@ -144,18 +147,12 @@ combine_sumstats <- function(sumstats, scale=TRUE){
 #'   `nsubj`, `nmiss`, `colsum`, `ysum`, and `yssq`.
 #' @param wt Numeric vector of cluster weights. Must have length equal to
 #'   `length(sumstats_clusters)` and sum to 1.
+#' @param no_drop columns that should not be dropped even if their variance is small (e.g. covariates in the model)
 #'
-#' @return A summary-statistic object created by `new_sumstats()`, with
-#'   additional components:
-#'   \describe{
-#'     \item{beta_multiplier}{Multiplier for converting standardized-scale
-#'       coefficients back to the original predictor scale.}
-#'     \item{yvar}{Weighted-average outcome variance.}
-#'     \item{sdx}{Predictor standard deviations retained after filtering.}
-#'     \item{sdy}{Outcome standard deviation.}
-#'     \item{xx_orig}{Unscaled weighted-average `xx` matrix after filtering.}
-#'     \item{xy_orig}{Unscaled weighted-average `xy` vector after filtering.}
-#'   }
+#' @return list of 1. sumstats object, 2. yvar (which should be 1),
+#' 3. beta_multiplier (Multiplier for converting standardized-scale
+#'       coefficients back to the original predictor scale), 4. list of columns with incomplete data (missing in at least
+#' one list element), 5. list of dropped columns with variance <= 1e-2 in X'X matrix (NULL if scale=FALSE)
 #'
 #' @details
 #' For each cluster, `xx`, `xy`, and `yssq` are first divided by that cluster's
@@ -176,7 +173,7 @@ combine_sumstats <- function(sumstats, scale=TRUE){
 #' }
 #'
 #' @export
-sumstats_weighted_ave <- function(sumstats_clusters, wt){
+sumstats_weighted_ave <- function(sumstats_clusters, wt, no_drop=character()){
     lapply(sumstats_clusters, validate_sumstats)
     matched_sumstats <- match_sumstats(sumstats_clusters)
     sumstats_clusters <- matched_sumstats$sumstats
@@ -224,8 +221,9 @@ sumstats_weighted_ave <- function(sumstats_clusters, wt){
     ## eliminate variables with nearly 0 variance; small var creates very large
     ## beta_multiplier that might not be robust
     
-    keep <- (sdx > 1e-2)
+    keep <- (sdx > 1e-2) | (colnames(xx) %in% no_drop)
     near_zero_var <- colnames(xx)[!keep]
+    if (any(no_drop %in% near_zero_var)) stop("can't drop columns in no_drop")
     if (length(near_zero_var) > 0) {
         xx  <- xx[keep, keep]
         xy  <- xy[keep,, drop=FALSE]
