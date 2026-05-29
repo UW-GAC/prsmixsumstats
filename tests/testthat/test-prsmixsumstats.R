@@ -279,9 +279,20 @@ test_that("combined_sumstats diag 0", {
     expect_equal(nrow(ss$xx), 999)
     expect_equal(length(ss$xy), 999)
     expect_equal(chk$near_zero_var, colnames(ss1$xx)[1:5])
-    chk <- suppressWarnings(combine_sumstats(list(ss1, ss2, ss3), no_drop="age"))
+    chk <- combine_sumstats(list(ss1, ss2, ss3), no_drop="age")
     ss <- chk$sumstats
-    expect_equal(chk$near_zero_var, colnames(ss1$xx)[2:5])
+    expect_equal(chk$near_zero_var, colnames(ss1$xx)[1:5])
+    
+    ss1 <- make_sumstats(dat[[1]]$x, dat[[1]]$y, center=FALSE)
+    ss2 <- make_sumstats(dat[[2]]$x, dat[[2]]$y, center=FALSE)
+    ss3 <- make_sumstats(dat[[3]]$x, dat[[3]]$y, center=FALSE)
+    diag(ss1$xx)[1] <- 1e-6
+    diag(ss2$xx)[1] <- 1e-6
+    diag(ss3$xx)[1] <- 1e-6
+    chk <- combine_sumstats(list(ss1, ss2, ss3))
+    expect_equal(chk$near_zero_var, "age")
+    chk <- suppressWarnings(combine_sumstats(list(ss1, ss2, ss3), no_drop="age"))
+    expect_equal(chk$near_zero_var, character())
 })
 
 
