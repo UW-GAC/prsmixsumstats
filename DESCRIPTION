@@ -1,6 +1,6 @@
 Package: prsmixsumstats
 Title: Generate summary statistics for PRSmix elastic net
-Version: 0.3.0
+Version: 0.3.1
 Author: Dan Schaid, Stephanie Gogarten 
 Maintainer: Stephanie Gogarten <sdmorris@uw.edu>
 Description: Generate summary statistics for PRSmix elastic net.
@@ -9,4 +9,4 @@ Imports: methods, utils, stats, rWishart
 Suggests: roxygen2, testthat, knitr, rmarkdown, reshape2, ggplot2
 VignetteBuilder: knitr
 Encoding: UTF-8
-RoxygenNote: 7.3.2
+Config/roxygen2/version: 8.0.0
