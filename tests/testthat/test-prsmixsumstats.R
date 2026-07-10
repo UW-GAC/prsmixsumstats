@@ -359,3 +359,11 @@ test_that("combine sumstats by cluster", {
                          comb12$incomplete_cols))
 })
 
+
+test_that("rescale", {
+  dat <- sim_test_dat(10, nprs=10)
+  ss1 <- make_sumstats(dat$x, dat$y)
+  scaled <- rescale_sumstats(ss1, 2)
+  ss2 <- make_sumstats(dat$x, 2*dat$y)
+  expect_equal(scaled, ss2)
+})
