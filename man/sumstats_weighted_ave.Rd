@@ -14,7 +14,7 @@ Each element must contain `xx` and `xy`, and must have attributes `nobs`,
 \item{wt}{Numeric vector of cluster weights. Must have length equal to
 `length(sumstats_clusters)` and sum to 1.}
 
-\item{no_drop}{columns that should not be dropped even if their variance is small (e.g. covariates in the model)}
+\item{no_drop}{columns that should not be dropped even if their variance is small (e.g. covariates in the model). if variance is zero, they will still be dropped.}
 }
 \value{
 list of 1. sumstats object, 2. yvar (which should be 1),

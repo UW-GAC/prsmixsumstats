@@ -11,7 +11,7 @@ combine_sumstats(sumstats, scale = TRUE, no_drop = character())
 
 \item{scale}{boolean for whether to scale combined sumstats}
 
-\item{no_drop}{columns that should not be dropped even if their variance is small (e.g. covariates in the model)}
+\item{no_drop}{columns that should not be dropped even if their variance is small (e.g. covariates in the model). if variance is zero, they will still be dropped.}
 }
 \value{
 list of 1. sumstats object, 2. yvar (which should be 1),
