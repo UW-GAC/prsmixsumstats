@@ -363,7 +363,20 @@ test_that("combine sumstats by cluster", {
 test_that("rescale", {
   dat <- sim_test_dat(10, nprs=10)
   ss1 <- make_sumstats(dat$x, dat$y)
-  scaled <- rescale_sumstats(ss1, 2)
+  scaled1 <- rescale_sumstats(ss1)
+  expect_equal(ss1, scaled1)
+  
   ss2 <- make_sumstats(dat$x, 2*dat$y)
+  scaled <- rescale_sumstats(ss1, 2)
+  expect_equal(scaled, ss2)
+  
+  ss2 <- make_sumstats(2*dat$x, dat$y)
+  scaled <- rescale_sumstats(ss1, 1, rep(2, ncol(ss2$xx)))
+  expect_equal(scaled, ss2)
+  
+  dat2 <- dat
+  dat$x[,"cov1"] <- 2*dat$x[,"cov1"]
+  ss2 <- make_sumstats(dat$x, dat$y)
+  scaled <- rescale_sumstats(ss1, 1, c(1,1,2,rep(1,11)))
   expect_equal(scaled, ss2)
 })

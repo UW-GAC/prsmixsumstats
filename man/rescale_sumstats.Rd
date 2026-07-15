@@ -2,38 +2,53 @@
 % Please edit documentation in R/rescale_sumstats.R
 \name{rescale_sumstats}
 \alias{rescale_sumstats}
-\title{Rescale response-dependent summary statistics}
+\title{Rescale Summary Statistics}
 \usage{
-rescale_sumstats(sumstats, scale_multiplier)
+rescale_sumstats(
+  sumstats,
+  y_multiplier = 1,
+  x_multiplier = rep(1, ncol(sumstats$xx))
+)
 }
 \arguments{
-\item{sumstats}{A summary statistics object containing an `xy` component and
-attributes `"ysum"` and `"yssq"`.}
+\item{sumstats}{A summary statistics object containing components `xx` and
+`xy`, and attributes `"colsum"`, `"ysum"`, and `"yssq"`.}
 
-\item{scale_multiplier}{Numeric scalar by which the original response vector
-is to be multiplied.}
+\item{y_multiplier}{Numeric scalar by which the response vector is multiplied.}
+
+\item{x_multiplier}{Numeric vector of column-wise multipliers for the design
+matrix. Its length must equal the number of predictors.}
 }
 \value{
-A summary statistics object of the same structure as `sumstats`,
-  with the response-dependent quantities appropriately rescaled.
+A summary statistics object with the same structure as `sumstats`,
+  with all predictor- and response-dependent quantities rescaled to
+  correspond to the transformed variables.
 }
 \description{
-Rescales the response-dependent components of a summary statistics object
-based on response vector \eqn{y}  multiplied by a scalar. If the
-transformed response is \eqn{y^* = a y}, then the function updates:
+Rescales the summary statistics corresponding to a transformed design matrix
+and response vector. If the transformed variables are
 }
 \details{
+\deqn{X^* = X \mathrm{diag}(b), \qquad y^* = a y,}
+
+where `x_multiplier = b` and `y_multiplier = a`, then the function updates
+the stored summary statistics as follows:
+
 \itemize{
-  \item \eqn{X^\top y \rightarrow a X^\top y}
+  \item \eqn{X^\top X \rightarrow \mathrm{diag}(b) X^\top X \mathrm{diag}(b)}
+  \item \eqn{X^\top y \rightarrow a\,\mathrm{diag}(b) X^\top y}
+  \item Column sums of \eqn{X}: \eqn{\sum X_j \rightarrow b_j \sum X_j}
   \item \eqn{\sum y \rightarrow a \sum y}
   \item \eqn{y^\top y \rightarrow a^2 y^\top y}
 }
-
-The predictor-dependent quantities (e.g., \eqn{X^\top X}) are left unchanged.
 }
 \examples{
 dat <- sim_test_dat(10, nprs=10)
-ss <- make_sumstats(dat$x, dat$y)
-ss_scaled <- rescale_sumstats(ss, scale_multiplier = 2)
+ss <- make_sumstats(dat$x[,1:3], dat$y)
+ss_scaled <- rescale_sumstats(
+  ss,
+  y_multiplier = 2,
+  x_multiplier = c(1, 0.5, 2)
+)
 
 }
