@@ -37,26 +37,25 @@
 #'
 #' @export
 rescale_sumstats <- function(sumstats, y_multiplier=1, x_multiplier=rep(1, ncol(sumstats$xx))) {
-  ss <- sumstats
-  if(ncol(ss$xx) != length(x_multiplier)){
+  if(ncol(sumstats$xx) != length(x_multiplier)){
     stop("ncol of xx != length of x_multiplier")
   }
   if(length(y_multiplier) != 1){
     stop("length(y_multiplier) != 1")
   }
   
-  ynames <- rownames(ss$xy)
-  ss$xy <- diag(x_multiplier) %*% ss$xy * y_multiplier
-  attr(ss, "ysum") <- y_multiplier * attr(sumstats, "ysum")
-  attr(ss, "yssq") <- y_multiplier^2 * attr(sumstats, "yssq")
-  rownames(ss$xy) <- ynames
+  ynames <- rownames(sumstats$xy)
+  sumstats$xy <- diag(x_multiplier) %*% sumstats$xy * y_multiplier
+  attr(sumstats, "ysum") <- y_multiplier * attr(sumstats, "ysum")
+  attr(sumstats, "yssq") <- y_multiplier^2 * attr(sumstats, "yssq")
+  rownames(sumstats$xy) <- ynames
   
-  xnames <- rownames(ss$xx)
-  ss$xx <-  diag(x_multiplier) %*% ss$xx %*% diag(x_multiplier)
-  attr(ss, "colsum") <-   attr(ss, "colsum") * x_multiplier
-  dimnames(ss$xx) <- list(xnames, xnames)
+  xnames <- rownames(sumstats$xx)
+  sumstats$xx <-  diag(x_multiplier) %*% sumstats$xx %*% diag(x_multiplier)
+  attr(sumstats, "colsum") <-   attr(sumstats, "colsum") * x_multiplier
+  dimnames(sumstats$xx) <- list(xnames, xnames)
   
-  return(ss)
+  return(sumstats)
 }
 
 
