@@ -44,16 +44,20 @@ rescale_sumstats <- function(sumstats, y_multiplier=1, x_multiplier=rep(1, ncol(
     stop("length(y_multiplier) != 1")
   }
   
-  ynames <- rownames(sumstats$xy)
-  sumstats$xy <- diag(x_multiplier) %*% sumstats$xy * y_multiplier
-  attr(sumstats, "ysum") <- y_multiplier * attr(sumstats, "ysum")
-  attr(sumstats, "yssq") <- y_multiplier^2 * attr(sumstats, "yssq")
-  rownames(sumstats$xy) <- ynames
+  if (y_multiplier != 1) {
+    ynames <- rownames(sumstats$xy)
+    sumstats$xy <- diag(x_multiplier) %*% sumstats$xy * y_multiplier
+    attr(sumstats, "ysum") <- y_multiplier * attr(sumstats, "ysum")
+    attr(sumstats, "yssq") <- y_multiplier^2 * attr(sumstats, "yssq")
+    rownames(sumstats$xy) <- ynames
+  }
   
-  xnames <- rownames(sumstats$xx)
-  sumstats$xx <-  diag(x_multiplier) %*% sumstats$xx %*% diag(x_multiplier)
-  attr(sumstats, "colsum") <-   attr(sumstats, "colsum") * x_multiplier
-  dimnames(sumstats$xx) <- list(xnames, xnames)
+  if (any(x_multiplier != 1)) {
+    xnames <- rownames(sumstats$xx)
+    sumstats$xx <-  diag(x_multiplier) %*% sumstats$xx %*% diag(x_multiplier)
+    attr(sumstats, "colsum") <-   attr(sumstats, "colsum") * x_multiplier
+    dimnames(sumstats$xx) <- list(xnames, xnames)
+  }
   
   return(sumstats)
 }
