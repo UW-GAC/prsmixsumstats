@@ -134,3 +134,15 @@ head(pgs_selected)
 
 plot(beta_bic, beta_min_loss); abline(0,1)
 ```
+
+
+## estimate the effect of an ensemble PGS
+
+```{r}
+is_pgs <- grepl("^PRS", names(beta_bic))
+fit_effects <- pgs_ensemble_sumstats(sumstats, beta = beta_bic,  
+                                     trait_type = "binary", 
+                                     index_pgs = which(is_pgs), 
+                                     index_covar = which(!is_pgs))
+fit_effects
+```
