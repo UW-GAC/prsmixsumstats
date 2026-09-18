@@ -26,9 +26,9 @@ n1 <- 100
 n2 <- 200
 n3 <- 300
 
-dat1 <- sim_test_dat(n1, nprs)
-dat2 <- sim_test_dat(n2, nprs)
-dat3 <- sim_test_dat(n3, nprs)
+dat1 <- sim_test_dat(n1, nprs, seed=60)
+dat2 <- sim_test_dat(n2, nprs, seed=60)
+dat3 <- sim_test_dat(n3, nprs, seed=60)
 ```
 
 # Biobanks Create Summary Statistics (3 demo biobanks)
