@@ -56,7 +56,7 @@
 
 .example_filter_data <- function(nprs=1000) {
     data.frame(
-        score = paste0("PRS00", 1:nprs),
+        score = paste0("PGS00", 1:nprs),
         overlap = runif(nprs, min=0, max=1)
     )    
 }
