@@ -348,6 +348,7 @@ pgs_ensemble_sumstats <- function(
 #' @examples
 #' # res <- pgs_marginal_sumstats(sumstats, beta, trait_type = "binary")
 #'
+#' @export
 pgs_marginal_sumstats <- function(
     sumstats,
     beta,
@@ -461,7 +462,7 @@ pgs_marginal_sumstats <- function(
 #' @return A list with components `variance`, `se`, `lower`, and `upper`.
 #'
 #' @examples
-#' hanley_mcneil(auc = 0.75, n.case = 100, n.control = 200)
+#' \dontrun{hanley_mcneil(auc = 0.75, n.case = 100, n.control = 200)}
 #'
 #' @keywords internal
 hanley_mcneil <- function(auc, n.case, n.control){

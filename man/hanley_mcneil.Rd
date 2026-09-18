@@ -31,7 +31,7 @@ confidence interval is `auc + c(-1, 1) * 1.96 * se` and is not constrained to
 the interval from 0 to 1.
 }
 \examples{
-hanley_mcneil(auc = 0.75, n.case = 100, n.control = 200)
+\dontrun{hanley_mcneil(auc = 0.75, n.case = 100, n.control = 200)}
 
 }
 \keyword{internal}
