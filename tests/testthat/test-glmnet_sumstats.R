@@ -19,6 +19,7 @@ test_that("ensemble", {
                                      maxiter=10, tol=1e-7, 
                                      beta_threshold=1e-4, verbose=FALSE)
     fit_effects <- pgs_ensemble_sumstats(ssc$sumstats, beta = fit_sumstats$beta,  
+                                         beta_multiplier = rep(1, length(fit_sumstats$beta)),
                                          trait_type = "binary")
     expect_true("PGS_ensemble" %in% names(fit_effects$coefficients))
     fit_marginal <- pgs_marginal_sumstats(ssc$sumstats, beta = fit_sumstats$beta,  

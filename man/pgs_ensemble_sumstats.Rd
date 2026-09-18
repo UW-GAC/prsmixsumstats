@@ -7,7 +7,7 @@
 pgs_ensemble_sumstats(
   sumstats,
   beta,
-  beta_multiplier = 1,
+  beta_multiplier,
   trait_type = "binary",
   tol = 1e-10
 )

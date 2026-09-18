@@ -81,7 +81,7 @@
 pgs_ensemble_sumstats <- function(
     sumstats,
     beta,
-    beta_multiplier = 1,
+    beta_multiplier,
     trait_type = "binary",
     tol = 1e-10
 ) {
@@ -117,6 +117,13 @@ pgs_ensemble_sumstats <- function(
       "`beta` must be numeric and have one entry per column of `xx`.",
       call. = FALSE
     )
+  }
+  
+  if (!is.numeric(beta_multiplier) || length(beta_multiplier) != ncol(xx)) {
+      stop(
+          "`beta_multipler` must be numeric and have one entry per column of `xx`.",
+          call. = FALSE
+      )
   }
   
   if (length(n) != 1L || !is.finite(n) || n <= 0 || n != as.integer(n)) {
