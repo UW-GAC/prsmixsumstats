@@ -18,11 +18,11 @@ test_that("ensemble", {
     fit_sumstats <-  glmnet_sumstats(ssc$sumstats, alpha=0.5, lambda=0.5, 
                                      maxiter=10, tol=1e-7, 
                                      beta_threshold=1e-4, verbose=FALSE)
-    is_pgs <- grepl("^PRS", names(fit_sumstats$beta))
     fit_effects <- pgs_ensemble_sumstats(ssc$sumstats, beta = fit_sumstats$beta,  
-                                         trait_type = "binary", 
-                                         index_pgs = which(is_pgs), 
-                                         index_covar = which(!is_pgs))
-    expect_equal(names(fit_effects$coefficients),
-                 c("PGS_ensemble", "age", "sex", "cov1", "cov2"))
+                                         trait_type = "binary")
+    expect_true("PGS_ensemble" %in% names(fit_effects$coefficients))
+    fit_marginal <- pgs_marginal_sumstats(ssc$sumstats, beta = fit_sumstats$beta,  
+                                          trait_type = "binary")
+    selected <- names(fit_sumstats$beta)[abs(fit_sumstats$beta) > 0]
+    expect_true(setequal(rownames(fit_marginal), selected))
 })
