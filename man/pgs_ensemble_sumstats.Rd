@@ -2,181 +2,98 @@
 % Please edit documentation in R/pgs_ensemble_sumstats.R
 \name{pgs_ensemble_sumstats}
 \alias{pgs_ensemble_sumstats}
-\title{Estimate the Effect of a Fixed-Weight Polygenic Score (Ensemble PGS) from Summary Statistics}
+\title{Fit an Ensemble Polygenic Score from Summary Statistics}
 \usage{
 pgs_ensemble_sumstats(
   sumstats,
   beta,
+  beta_multiplier,
   trait_type = "binary",
-  index_pgs,
-  index_covar = integer(0),
   tol = 1e-10
 )
 }
 \arguments{
-\item{sumstats}{A list-like object containing:
-\describe{
-  \item{\code{xx}}{A numeric square matrix containing
-    \eqn{X^\top X / n}.}
-  \item{\code{xy}}{A numeric vector containing
-    \eqn{X^\top y / n}.}
-}
-The sample size must be stored in \code{attr(sumstats, "nobs")}.
-When \code{trait_type = "binary"}, the number of cases must additionally
-be stored in \code{attr(sumstats, "ysum")} for the AUC calculations.}
+\item{sumstats}{A list-like object containing at least `xx`, a numeric square
+predictor cross-product/correlation matrix, and `xy`, a numeric vector with
+one entry per column of `xx`. The function also uses
+`attr(sumstats, "nobs")` for the sample size and
+`attr(sumstats, "yssq")` for the outcome sum of squares. For a binary trait,
+`attr(sumstats, "ysum")` must contain the number of cases. Column names of
+`sumstats$xx` are used to identify PGS columns via the substring `"PGS"`.}
 
-\item{beta}{Numeric vector of fixed predictor weights with one entry per
-column of \code{xx}. Entries selected by \code{index_pgs} are used to
-construct the PGS. Entries selected by \code{index_covar}, as well as the
-full vector, are also used in the approximate AUC and R-squared summaries.}
+\item{beta}{Numeric vector with one entry per column of `sumstats$xx`.
+Non-negligible entries (`abs(beta) > 1e-6`) determine which predictors are
+included. For columns identified as PGS predictors, the corresponding
+values are also used as the fixed weights defining the ensemble PGS.}
 
-\item{trait_type}{Character string specifying the outcome type. The default,
-\code{"binary"}, enables approximate AUC calculations using the number of
-cases stored in \code{attr(sumstats, "ysum")}. For non-binary traits,
-AUC-related quantities are not calculated and are returned as \code{NA}.}
+\item{beta_multiplier}{to recover predictor scales}
 
-\item{index_pgs}{Integer indices identifying the columns of \code{xx} and
-entries of \code{xy} and \code{beta} used to construct the PGS.}
+\item{trait_type}{Character string specifying the trait type. The current
+implementation expects \code{"binary"}; quantities used later in the
+function are initialized only in the binary-trait branch.}
 
-\item{index_covar}{Integer indices identifying adjustment covariates. May be
-empty (the default), in which case the fitted model contains only the PGS.}
-
-\item{tol}{Numeric tolerance used when solving the normal equations and
-assessing a slightly negative residual quantity caused by floating-point
-error.}
+\item{tol}{Numeric tolerance passed to [qr.solve()] when solving the summary-
+statistic normal equations. It is also used in the symmetry check for
+`sumstats$xx`.}
 }
 \value{
-A list with components:
-  \describe{
-    \item{\code{coefficients}}{Estimated coefficient for the Ensemble PGS
-      followed by coefficients for the adjustment covariates.}
-    \item{\code{varcov}}{Estimated variance-covariance matrix of the
-      coefficients, using the normalization of the supplied cross-products.}
-    \item{\code{sigma2}}{Residual variance quantity computed as
-      \code{(1 - alpha^T B) / df}. Because \code{xx} and \code{xy} are
-      normalized by \code{n}, this is scaled by \code{1/n} relative to the
-      conventional residual variance based on residual sum of squares.}
-    \item{\code{df}}{Residual degrees of freedom, equal to the sample size
-      minus the number of fitted coefficients.}
-    \item{\code{r2_full_model}}{R-squared summary computed from the full
-      supplied \code{beta}, \code{xx}, and \code{xy}.}
-    \item{\code{r2_covar_model}}{R-squared summary computed from the
-      covariate subset of the supplied weights and summary statistics.}
-    \item{\code{r2_partial}}{Partial R-squared calculated from the full and
-      covariate-model R-squared summaries.}
-    \item{\code{auc}}{For binary traits, a named numeric vector containing
-      approximate AUCs for the full fixed-weight score, the covariate-only
-      score, and the PGS-only score. For non-binary traits, \code{NA}.}
-    \item{\code{auc_var}}{For binary traits, Hanley-McNeil variance estimates
-      corresponding to the entries of \code{auc}. For non-binary traits,
-      \code{NA}.}
-    \item{\code{ncase}}{For binary traits, the number of cases from
-      \code{attr(sumstats, "ysum")}; otherwise \code{NA}.}
-    \item{\code{ncont}}{For binary traits, the number of controls, computed
-      as \code{attr(sumstats, "nobs") - attr(sumstats, "ysum")}; otherwise
-      \code{NA}.}
-    \item{\code{ntot}}{Total sample size from
-      \code{attr(sumstats, "nobs")}.}
-  }
+A list containing:
+\describe{
+  \item{`coefficients`}{Estimated coefficient for the ensemble PGS followed
+    by coefficients for the selected covariates.}
+  \item{`varcov`}{Estimated variance-covariance matrix of the fitted
+    coefficients.}
+  \item{`sigma2`}{Residual mean-squared-error quantity used in the covariance
+    calculation.}
+  \item{`df`}{Residual degrees of freedom, equal to the sample size minus the
+    number of fitted coefficients.}
+  \item{`R2_full_model`}{Model \eqn{R^2} for the ensemble PGS plus selected
+    covariates.}
+  \item{`R2_covar_model`}{Model \eqn{R^2} for the covariate-only component;
+    `NA` when no covariates are fitted.}
+  \item{`R2_partial`}{Partial \eqn{R^2}, computed as
+    \eqn{(R^2_{full}-R^2_{covar})/(1-R^2_{covar})}.}
+  \item{`log_or`}{Approximate log odds ratios derived from the fitted
+    coefficients for a binary trait.}
+  \item{`or`}{Approximate odds ratios, `exp(log_or)`.}
+  \item{`auc`}{Named vector of approximate AUCs for the full model, the
+    covariate-only model, and the ensemble-PGS-only model.}
+  \item{`auc_var`}{Hanley-McNeil variance estimates corresponding to `auc`.}
+  \item{`ncase`}{Number of cases from `attr(sumstats, "ysum")`.}
+  \item{`ncont`}{Number of controls, `n - ncase`.}
+  \item{`n`}{Total sample size from `attr(sumstats, "nobs")`.}
+}
 }
 \description{
-Estimates the association between a fixed-weight polygenic score (PGS) and
-an outcome while adjusting for covariates, using predictor cross-products
-and predictor-outcome cross-products. The function also computes model
-R-squared summaries from the supplied fixed predictor weights and, for
-binary traits, approximate AUC summaries.
+Fits a regression model for an ensemble polygenic score (PGS) together with
+adjustment covariates using summary-statistic cross-products. Predictors are
+classified from the column names of `sumstats$xx`: columns whose names contain
+`"PGS"` are treated as PGS predictors, and the remaining columns are treated
+as covariates. Only predictors with `abs(beta) > 1e-6` are included.
 }
 \details{
-The Ensemble PGS is defined as
+Let the selected PGS columns be indexed by \eqn{P} and selected covariates by
+\eqn{C}. The selected PGS weights, `beta[P]`, are combined into one ensemble
+score. Internally, the function constructs a summary-statistic design matrix
+for the standardized ensemble PGS and the scaled covariates, solves for their
+coefficients, and computes model \eqn{R^2} and a residual mean-squared-error
+quantity from `attr(sumstats, "yssq")`.
 
-\deqn{S = X_{\mathrm{PGS}} \beta_{\mathrm{PGS}},}
+PGS predictors are identified automatically as columns for which
+`grepl("PGS", colnames(sumstats$xx))` is `TRUE`; all other columns are treated
+as covariates. Predictors whose supplied `beta` is effectively zero are
+omitted. Consequently, `sumstats$xx` must have informative column names.
 
-where the weights in \code{beta} are treated as fixed rather than estimated
-in this model. The fitted summary-statistic regression is
-
-\deqn{y = \alpha_{\mathrm{PGS}} S +
-      X_{\mathrm{covar}} \alpha_{\mathrm{covar}} + \epsilon.}
-
-The function assumes that the supplied summary statistics satisfy
-
-\deqn{xx = X^\top X / n}
-
-and
-
-\deqn{xy = X^\top y / n.}
-
-It additionally assumes that the outcome is centered and normalized such
-that
-
-\deqn{y^\top y / n = 1.}
-
-No intercept is fitted. Centering the outcome and all predictors is therefore
-required if an intercept would otherwise be needed.
-
-
-Let \eqn{Z} contain the constructed PGS as its first column and the
-adjustment covariates as its remaining columns. The function constructs
-
-\deqn{A = Z^\top Z / n}
-
-and
-
-\deqn{B = Z^\top y / n,}
-
-then solves \eqn{A\alpha = B}.
-
-Under the assumption \eqn{y^\top y/n = 1}, the code computes the normalized
-residual quantity
-
-\deqn{s = 1 - \alpha^\top B,}
-
-and sets \eqn{\widehat{\sigma}^2 = s / df}. The coefficient covariance
-matrix returned by the function is
-
-\deqn{\widehat{\mathrm{Var}}(\alpha)
-      = \widehat{\sigma}^2 A^{-1}.}
-
-With \code{xx} and \code{xy} normalized by \code{n}, this produces the
-same overall covariance scaling as using the conventional residual sum of
-squares \eqn{n s} together with an additional factor of \eqn{1/n}.
-
-The uncertainty in the supplied PGS and other fixed predictor weights is not
-incorporated. Thus, the variance estimates are conditional on \code{beta}.
-
-When \code{trait_type = "binary"}, approximate AUCs are computed separately
-for the full fixed-weight score, the covariate-only score, and the PGS-only
-score. These calculations use the case fraction derived from
-\code{attr(sumstats, "ysum")} and \code{attr(sumstats, "nobs")}. Their
-variances are estimated with the Hanley-McNeil approximation implemented by
-\code{hanley_mcneil()}. AUC-related quantities are not calculated for
-non-binary traits.
-
-Model R-squared summaries are calculated directly from the supplied fixed
-weights as \eqn{2\beta^\top xy - \beta^\top xx\beta}, with analogous
-calculations for the covariate-only subset. The returned partial R-squared is
-\eqn{(R^2_{full} - R^2_{covar}) / (1 - R^2_{covar})}.
+For a binary trait with case fraction \eqn{p}, the function converts model
+\eqn{R^2} values to approximate AUC values through a standardized case-control
+mean-difference approximation. It also reports an approximate log odds ratio
+for each fitted coefficient as \eqn{\alpha/[p(1-p)]}, with the corresponding
+odds ratio obtained by exponentiation. AUC variances are calculated with
+[hanley_mcneil()]. These calculations treat the supplied PGS weights as fixed.
 }
 \examples{
-set.seed(1)
-n <- 100L
-X <- scale(matrix(rnorm(500), nrow = n), center = TRUE, scale = FALSE)
-y <- rep(c(0, 1), each = n / 2)
-y <- as.numeric(scale(y, center = TRUE, scale = FALSE))
-y <- y / sqrt(drop(crossprod(y)) / n)
-
-xx <- crossprod(X) / n
-xy <- drop(crossprod(X, y)) / n
-
-sumstats <- list(xx = xx, xy = xy)
-attr(sumstats, "nobs") <- n
-attr(sumstats, "ysum") <- 50L
-
-fit <- pgs_ensemble_sumstats(
-  sumstats = sumstats,
-  beta = rep(0.1, ncol(xx)),
-  trait_type = "binary",
-  index_pgs = 1:3,
-  index_covar = 4:5
-)
+# `sumstats` is expected to contain cross-products and scaling information.
+# PGS columns are identified by names containing "PGS".
+# fit <- pgs_ensemble_sumstats(sumstats, beta, trait_type = "binary")
 
 }

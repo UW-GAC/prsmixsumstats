@@ -103,7 +103,9 @@ test_that("only one cluster", {
 
 test_that("make_sumstats_clusters - missing data", {
     dat <- .example_cluster_data_missing_cols(n=100, nprs=1000)
-    expect_message(expect_warning(make_sumstats_clusters(dat$trait, dat$covariates, dat$scores, dat$clusters, "pheno", "cohort"), "dropped the following covariates as all values are missing: cov2"), "dropped the following scores as all values are missing: PRS001")
+    expect_message(expect_warning(make_sumstats_clusters(dat$trait, dat$covariates, dat$scores, dat$clusters, "pheno", "cohort"), 
+                                  "dropped the following covariates as all values are missing: cov2"), 
+                   "dropped the following scores as all values are missing: PGS001")
     all <- readRDS("pheno_cohort_sumstats.rds")
     expect_equal(attr(all, "nobs"), 98)
     expect_equal(attr(all, "nmiss"), 0)
@@ -299,11 +301,11 @@ test_that("combined_sumstats diag 0", {
 test_that("rename_col_sumstats", {
     dat <- sim_test_dat(10, nprs=10)
     ss1 <- make_sumstats(dat$x, dat$y)
-    chk <- rename_col_sumstats(ss1, old_name="PRS001", new_name="PRS001_renamed")
-    expect_equal(colnames(chk$xx)[colnames(ss1$xx) == "PRS001"], "PRS001_renamed")
-    expect_equal(rownames(chk$xx)[rownames(ss1$xx) == "PRS001"], "PRS001_renamed")
-    expect_equal(rownames(chk$xy)[rownames(ss1$xy) == "PRS001"], "PRS001_renamed")
-    expect_equal(names(attr(chk, "colsum"))[names(attr(ss1, "colsum")) == "PRS001"], "PRS001_renamed")
+    chk <- rename_col_sumstats(ss1, old_name="PGS001", new_name="PGS001_renamed")
+    expect_equal(colnames(chk$xx)[colnames(ss1$xx) == "PGS001"], "PGS001_renamed")
+    expect_equal(rownames(chk$xx)[rownames(ss1$xx) == "PGS001"], "PGS001_renamed")
+    expect_equal(rownames(chk$xy)[rownames(ss1$xy) == "PGS001"], "PGS001_renamed")
+    expect_equal(names(attr(chk, "colsum"))[names(attr(ss1, "colsum")) == "PGS001"], "PGS001_renamed")
 })
 
 

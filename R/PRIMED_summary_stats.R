@@ -194,7 +194,7 @@ sim_test_dat <- function(nsubj, nprs, prev=.1, beta.sd=2, seed=42){
   xb <- x %*% beta + log(prev/(1-prev))
   p <- exp(xb) / (1 + exp(xb))
   y <- as.vector(1*(runif(nsubj) <= p))
-  colnames(x) <- c("age","sex","cov1","cov2", paste0("PRS00", 1:nprs))
+  colnames(x) <- c("age","sex","cov1","cov2", paste0("PGS00", 1:nprs))
   return(list(y=y, x=x))
 }
 
