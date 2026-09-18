@@ -24,7 +24,7 @@ Simulate test data of 3 groups with PRS (nprs) and covariates (sex, age, covs)
 nprs <- 500
 n1 <- 100
 n2 <- 200
-n3 <- 100
+n3 <- 300
 
 dat1 <- sim_test_dat(n1, nprs)
 dat2 <- sim_test_dat(n2, nprs)
@@ -56,9 +56,9 @@ sumstats <- combo_sumstats$sumstats
 alpha_grid <- seq(from=0.9, to=0.1, by= -0.2)
 lambda_frac <- seq(from=1, to=.01, length=10)
 
-## penalty factor should be 0 for covariates and 1 for PRS
+## penalty factor should be 0 for covariates and 1 for PGS
 penalty_factor <- rep(0,ncol(sumstats$xx))
-penalty_factor[grepl("^PRS", colnames(sumstats$xx))] <- 1
+penalty_factor[grepl("^PGS", colnames(sumstats$xx))] <- 1
 
 ## note 2-dimensional grid of fits. Each fit is a list
 ## and all fits arranged as matrix (of lists)
@@ -139,10 +139,14 @@ plot(beta_bic, beta_min_loss); abline(0,1)
 ## estimate the effect of an ensemble PGS
 
 ```{r}
-is_pgs <- grepl("^PRS", names(beta_bic))
-fit_effects <- pgs_ensemble_sumstats(sumstats, beta = beta_bic,  
-                                     trait_type = "binary", 
-                                     index_pgs = which(is_pgs), 
-                                     index_covar = which(!is_pgs))
+fit_effects <- pgs_ensemble_sumstats(sumstats, beta = beta_bic, 
+                                     beta_multiplier = combo_sumstats$beta_multiplier,
+                                     trait_type = "binary")
 fit_effects
+```
+
+```{r}
+fit_marginal <- pgs_marginal_sumstats(sumstats, beta = beta_bic,  
+                                      trait_type = "binary")
+fit_marginal
 ```

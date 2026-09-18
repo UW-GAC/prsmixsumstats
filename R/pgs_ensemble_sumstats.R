@@ -9,15 +9,15 @@
 #' @param sumstats A list-like object containing at least `xx`, a numeric square
 #'   predictor cross-product/correlation matrix, and `xy`, a numeric vector with
 #'   one entry per column of `xx`. The function also uses
-#'   `attr(sumstats, "nobs")` for the sample size,
-#'   `attr(sumstats, "yssq")` for the outcome sum of squares, and
-#'   `sumstats$beta_multiplier` to recover predictor scales. For a binary trait,
+#'   `attr(sumstats, "nobs")` for the sample size and
+#'   `attr(sumstats, "yssq")` for the outcome sum of squares. For a binary trait,
 #'   `attr(sumstats, "ysum")` must contain the number of cases. Column names of
 #'   `sumstats$xx` are used to identify PGS columns via the substring `"PGS"`.
 #' @param beta Numeric vector with one entry per column of `sumstats$xx`.
 #'   Non-negligible entries (`abs(beta) > 1e-6`) determine which predictors are
 #'   included. For columns identified as PGS predictors, the corresponding
 #'   values are also used as the fixed weights defining the ensemble PGS.
+#' @param beta_multiplier to recover predictor scales
 #' @param trait_type Character string specifying the trait type. The current
 #'   implementation expects \code{"binary"}; quantities used later in the
 #'   function are initialized only in the binary-trait branch.
@@ -81,6 +81,7 @@
 pgs_ensemble_sumstats <- function(
     sumstats,
     beta,
+    beta_multiplier = 1,
     trait_type = "binary",
     tol = 1e-10
 ) {
@@ -169,7 +170,6 @@ pgs_ensemble_sumstats <- function(
   
   
   sdy <- sqrt(attr(sumstats, "yssq")/n)
-  beta_multiplier <-  sumstats$beta_multiplier
   sdx <- sdy/beta_multiplier
   sdx_pgs <- sdx[index_pgs]
   sdx_covar <- sdx[index_covar]
