@@ -85,115 +85,115 @@ pgs_ensemble_sumstats <- function(
     trait_type = "binary",
     tol = 1e-10
 ) {
-  
-  
-  is_pgs <- grepl("PGS", colnames(sumstats$xx)) 
+
+
+  is_pgs <- grepl("PGS", colnames(sumstats$xx))
   is_beta <- abs(beta) > 1e-6
   is_covar <- !is_pgs
   index_pgs <- (1:ncol(sumstats$xx))[is_pgs & is_beta]
   index_covar <- (1:ncol(sumstats$xx))[is_covar & is_beta]
-  
+
   xx <- sumstats$xx
   xy <- sumstats$xy
   n <- attr(sumstats, "nobs")
-  
+
   if (!is.matrix(xx) || !is.numeric(xx)) {
     stop("`sumstats$xx` must be a numeric matrix.", call. = FALSE)
   }
-  
+
   if (nrow(xx) != ncol(xx)) {
     stop("`sumstats$xx` must be square.", call. = FALSE)
   }
-  
+
   if (!is.numeric(xy) || length(xy) != ncol(xx)) {
     stop(
       "`sumstats$xy` must be numeric and have one entry per column of `xx`.",
       call. = FALSE
     )
   }
-  
+
   if (!is.numeric(beta) || length(beta) != ncol(xx)) {
     stop(
       "`beta` must be numeric and have one entry per column of `xx`.",
       call. = FALSE
     )
   }
-  
+
   if (!is.numeric(beta_multiplier) || length(beta_multiplier) != ncol(xx)) {
       stop(
           "`beta_multipler` must be numeric and have one entry per column of `xx`.",
           call. = FALSE
       )
   }
-  
+
   if (length(n) != 1L || !is.finite(n) || n <= 0 || n != as.integer(n)) {
     stop(
       "`attr(sumstats, \"nobs\")` must be a positive integer.",
       call. = FALSE
     )
   }
-  
+
   if (!is.numeric(index_pgs) || anyNA(index_pgs)) {
     stop("`index_pgs` must contain integer indices.", call. = FALSE)
   }
-  
+
   if (!is.numeric(index_covar) || anyNA(index_covar)) {
     stop("`index_covar` must contain integer indices.", call. = FALSE)
   }
-  
+
   index_pgs <- as.integer(index_pgs)
   index_covar <- as.integer(index_covar)
-  
+
   if (length(index_pgs) == 0L) {
     stop("`index_pgs` must select at least one predictor.", call. = FALSE)
   }
-  
+
   all_index <- c(index_pgs, index_covar)
-  
+
   if (any(all_index < 1L | all_index > ncol(xx))) {
     stop("Predictor indices are outside the dimensions of `xx`.", call. = FALSE)
   }
-  
+
   if (anyDuplicated(index_pgs) || anyDuplicated(index_covar)) {
     stop("Predictor indices must not be duplicated.", call. = FALSE)
   }
-  
+
   if (length(intersect(index_pgs, index_covar)) > 0L) {
     stop(
       "`index_pgs` and `index_covar` must not overlap.",
       call. = FALSE
     )
   }
-  
+
   if (any(!is.finite(xx)) ||
       any(!is.finite(xy)) ||
       any(!is.finite(beta[index_pgs]))) {
     stop("Inputs used in the model must all be finite.", call. = FALSE)
   }
-  
+
   if (!isTRUE(all.equal(xx, t(xx), tolerance = sqrt(tol)))) {
     stop("`sumstats$xx` must be symmetric.", call. = FALSE)
   }
-  
-  
+
+
   sdy <- sqrt(attr(sumstats, "yssq")/n)
   sdx <- sdy/beta_multiplier
   sdx_pgs <- sdx[index_pgs]
   sdx_covar <- sdx[index_covar]
   Dsx_covar <- diag(sdx_covar)
-  
+
   beta_pgs <- beta[index_pgs]
   beta_covar <- beta[index_covar]
-  
+
   xx_pgs <- xx[index_pgs, index_pgs, drop = FALSE]
   xx_covar <- xx[index_covar, index_covar, drop = FALSE]
   xx_pgs_covar <- xx[index_pgs, index_covar, drop = FALSE]
-  
+
   xy_pgs <- xy[index_pgs]
   xy_covar <- xy[index_covar]
-  
+
   q <- drop(beta_pgs %*% xx_pgs %*% beta_pgs)
-  
+
   Umat <- rbind (cbind(1, beta_pgs %*% xx_pgs_covar %*%  Dsx_covar/sqrt(q) ),
                  cbind(Dsx_covar %*% t(xx_pgs_covar) %*% beta_pgs/sqrt(q), Dsx_covar %*% xx_covar %*% Dsx_covar ))
   uvec <- c( (sdy * t(beta_pgs) %*% xy_pgs)/sqrt(q) ,sdy * Dsx_covar %*% xy_covar )
@@ -201,9 +201,9 @@ pgs_ensemble_sumstats <- function(
   R2 <- drop((alpha %*% Umat %*% alpha)/sdy^2)
   mse <- sdy^2*(1-R2)
   mse <- max(mse, 0)
-  
+
   covar_names <- colnames(xx)[index_covar]
-  
+
   if (length(index_covar) > 0L) {
     if (is.null(covar_names)) {
       covar_names <- paste0("covariate_", seq_along(index_covar))
@@ -212,74 +212,79 @@ pgs_ensemble_sumstats <- function(
   } else{
     names(uvec) <- c("PGS_ensemble")
   }
-  
- 
+
+
   names(alpha) <- names(uvec)
- 
-  
+
+
   n_parameters <- length(alpha)
   df <- n - n_parameters
   var_alpha <- mse* solve(Umat)/df
-  
-  
+
+
   # Remove minor numerical asymmetry.
   var_alpha <- (var_alpha + t(var_alpha)) / 2
-  
+
   dimnames(var_alpha) <- list(names(alpha), names(alpha))
-   
+
   n <- attr(sumstats, "nobs")
-  
+
+
+  R2_full <- drop((alpha %*% Umat %*% alpha)/sdy^2)
+  if(length(alpha) > 1){
+    R2_cov <- drop((alpha[-1] %*% Umat[-1,-1,drop=FALSE] %*% alpha[-1])/sdy^2)
+  } else {
+    R2_cov  <- NA
+  }
+  R2_pgs <- drop((alpha[1] %*% Umat[1,1,drop=FALSE] %*% alpha[1])/sdy^2)
+  R2_partial <- (R2_full - R2_cov) / (1 - R2_cov)
+
+
+  ## For binary trait approximate AUC based on sumstats
+
   ncase <- NA
   case_freq <- NA
   auc <- NA
   auc_var <- NA
-  
-  
-  ## For binary trait approximate AUC based on sumstats
-  
+  log_or <- NA
+  or <- NA
+
   if(trait_type == "binary"){
     ncase <- attr(sumstats, "ysum")
     p <- ncase/n
-    
-    R2_full <- drop((alpha %*% Umat %*% alpha)/sdy^2)
+
     D2 <- R2_full/( p*(1-p)*(1-R2_full) )
     auc_full <- pnorm(sqrt(D2/2))
-    
+
     if(length(alpha) > 1){
-      R2_cov <- drop((alpha[-1] %*% Umat[-1,-1,drop=FALSE] %*% alpha[-1])/sdy^2)
       D2 <- R2_cov/( p*(1-p)*(1-R2_cov) )
       auc_cov <- pnorm(sqrt(D2/2))
     } else{
-      R2_cov <- NA
       auc_cov <- NA
     }
-    
-    R2_pgs <- drop((alpha[1] %*% Umat[1,1,drop=FALSE] %*% alpha[1])/sdy^2)
+
     D2 <- R2_pgs/( p*(1-p)*(1-R2_pgs) )
     auc_pgs <- pnorm(sqrt(D2/2))
-    
+
     auc <- c(auc_full, auc_cov, auc_pgs)
     aucname <- c("Full", "Covar", "PGS_Ensemble")
     names(auc) <- aucname
-    
+
     auc_var <- c(
       hanley_mcneil(auc_full, n.case = ncase, n.control = n - ncase)$variance,
       if (is.na(auc_cov)) NA_real_ else
         hanley_mcneil(auc_cov, n.case = ncase, n.control = n - ncase)$variance,
       hanley_mcneil(auc_pgs, n.case = ncase, n.control = n - ncase)$variance
     )
-    
+
     names(auc_var) <- aucname
+
+    ## approximate odds ratio
+    log_or <- alpha/(p*(1-p))
+    or <- exp(log_or)
   }
-  
-  ## model R2
-  ## full model
-  
-  R2_partial <- (R2_full - R2_cov) / (1 - R2_cov)
-  
-  ## approximate odds ratio
-  log_or <- alpha/(p*(1-p))
-  or <- exp(log_or)
+
+
   list(
     coefficients = alpha,
     varcov = var_alpha,
@@ -362,38 +367,38 @@ pgs_marginal_sumstats <- function(
     trait_type = "binary",
     tol = 1e-10
 ){
- 
-  
-  is_pgs <- grepl("PGS", colnames(sumstats$xx)) 
+
+
+  is_pgs <- grepl("PGS", colnames(sumstats$xx))
   is_beta <- abs(beta) > 1e-6
   is_covar <- !is_pgs
   index_pgs <- (1:ncol(sumstats$xx))[is_pgs & is_beta]
   index_covar <- (1:ncol(sumstats$xx))[is_covar & is_beta]
-  
+
   xx <- sumstats$xx
   xy <- sumstats$xy
   n <- attr(sumstats, "nobs")
   sdy <- sqrt(attr(sumstats, "yssq")/n)
-  
+
   xx_pgs <- xx[index_pgs, index_pgs, drop = FALSE]
   xx_covar <- xx[index_covar, index_covar, drop = FALSE]
   xx_pgs_covar <- xx[index_pgs, index_covar, drop = FALSE]
-  
+
   xy_pgs <- xy[index_pgs]
   xy_covar <- xy[index_covar]
-  
+
   pgs_name <- colnames(sumstats$xx)[index_pgs]
-  
+
   alpha_pgs <- rep(NA,  length(index_pgs))
   var_alpha_pgs <- rep(NA,  length(index_pgs))
   R2_full  <- rep(NA,  length(index_pgs))
   auc_full <- rep(NA, length(index_pgs))
   auc_covar <- rep(NA, length(index_pgs))
-  auc_pgs <- rep(NA, length(index_pgs))  
+  auc_pgs <- rep(NA, length(index_pgs))
   log_or <- rep(NA, length(index_pgs))
   or <- rep(NA, length(index_pgs))
 
- 
+
   for(i in 1:length(index_pgs)){
     index <- c(index_pgs[i], index_covar)
     Rmat <- xx[index, index, drop=FALSE]
@@ -405,7 +410,7 @@ pgs_marginal_sumstats <- function(
     R2_full[i] <- R2 <- drop(rvec %*% Rinv %*% rvec)
     var_alpha <- (1-R2)* Rinv/(n-q)
     var_alpha_pgs[i] <- sdy^2*var_alpha[1,1]
-    if(length(index_covar > 0)){
+    if(length(index_covar) > 0){
       Rmat_covar <- xx[index_covar, index_covar, drop=FALSE]
       Rcovar_inv <- solve(Rmat_covar)
       rvec_covar <- xy[index_covar]
@@ -417,11 +422,11 @@ pgs_marginal_sumstats <- function(
     if(trait_type == "binary"){
       ncase <- attr(sumstats, "ysum")
       p <- ncase/n
-      
+
       ## standardized case-control mean difference for full model
       D2 <- R2/( p*(1-p)*(1-R2) )
       auc_full[i] <- pnorm(sqrt(D2/2))
-      
+
       # standardized case-control mean difference for covar only model
       if(length(index_covar) > 0){
         D2_covar <- R2_covar / ( p*(1-p)*(1-R2_covar) )
@@ -433,18 +438,18 @@ pgs_marginal_sumstats <- function(
       r2 <- rvec[1]^2
       d2 <-  r2 / ( p*(1-p)*(1-r2) )
       auc_pgs[i] <- pnorm(sqrt(d2/2))
-      
+
       log_or[i] <- alpha_pgs[i]/(p*(1-p))
       or[i] <- exp(log_or[i])
     }
-    
+
   }
-  
+
     df <- data.frame(coef_pgs=alpha_pgs, se=sqrt(var_alpha_pgs),
                      R2_full=R2_full,log_or = log_or, or = or,  auc_full=auc_full, auc_covar = auc_covar, auc_pgs=auc_pgs)
     rownames(df) <- pgs_name
     return(df)
-      
+
 }
 
 #' Hanley-McNeil Variance and Confidence Interval for an AUC
@@ -473,26 +478,26 @@ pgs_marginal_sumstats <- function(
 #'
 #' @keywords internal
 hanley_mcneil <- function(auc, n.case, n.control){
-  if(is.na(auc)){ 
+  if(is.na(auc)){
     var = NA
     se = NA
     lower = NA
     upper = NA
   } else{
-    
+
     Q1 <- auc/(2-auc)
     Q2 <- 2*auc^2/(1+auc)
-    
+
     var <- (auc*(1-auc) +
               (n.case-1)*(Q1-auc^2) +
               (n.control-1)*(Q2-auc^2)) /
       (n.case*n.control)
-    
+
     se <- sqrt(var)
-    
+
     ci <- auc + c(-1,1)*1.96*se
   }
-  
+
   list(
     variance = var,
     se = se,
