@@ -148,5 +148,5 @@ fit_effects
 ```{r}
 fit_marginal <- pgs_marginal_sumstats(sumstats, beta = beta_bic,  
                                       trait_type = "binary")
-fit_marginal
+fit_marginal[abs(fit_marginal$beta) > 0,]
 ```
