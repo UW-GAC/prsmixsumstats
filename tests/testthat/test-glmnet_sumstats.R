@@ -25,8 +25,8 @@ test_that("ensemble", {
     expect_true(!is.na(fit_effects$or))
     fit_marginal <- pgs_marginal_sumstats(ssc$sumstats, beta = fit_sumstats$beta,  
                                           trait_type = "binary")
-    selected <- names(fit_sumstats$beta)[abs(fit_sumstats$beta) > 0]
-    expect_true(setequal(rownames(fit_marginal), selected))
+    pgs <- colnames(ssc$sumstats$xx)[grepl("^PGS", colnames(ssc$sumstats$xx))]
+    expect_true(setequal(rownames(fit_marginal), pgs))
 })
 
 test_that("ensemble - quantitative", {
@@ -43,6 +43,6 @@ test_that("ensemble - quantitative", {
     expect_equal(fit_effects$or, NA)
     fit_marginal <- pgs_marginal_sumstats(ssc$sumstats, beta = fit_sumstats$beta,  
                                           trait_type = "quant")
-    selected <- names(fit_sumstats$beta)[abs(fit_sumstats$beta) > 0]
-    expect_true(setequal(rownames(fit_marginal), selected))
+    pgs <- colnames(ssc$sumstats$xx)[grepl("^PGS", colnames(ssc$sumstats$xx))]
+    expect_true(setequal(rownames(fit_marginal), pgs))
 })
