@@ -372,8 +372,11 @@ pgs_marginal_sumstats <- function(
   is_pgs <- grepl("PGS", colnames(sumstats$xx))
   is_beta <- abs(beta) > 1e-6
   is_covar <- !is_pgs
-  index_pgs <- (1:ncol(sumstats$xx))[is_pgs & is_beta]
-  index_covar <- (1:ncol(sumstats$xx))[is_covar & is_beta]
+  index_pgs <- (1:ncol(sumstats$xx))[is_pgs]
+  index_covar <- (1:ncol(sumstats$xx))[is_covar]
+
+  ## threshold beta
+  beta <- ifelse(abs(beta) < 1e-6, 0, beta)
 
   xx <- sumstats$xx
   xy <- sumstats$xy
@@ -391,7 +394,7 @@ pgs_marginal_sumstats <- function(
 
   alpha_pgs <- rep(NA,  length(index_pgs))
   var_alpha_pgs <- rep(NA,  length(index_pgs))
-  R2_full  <- rep(NA,  length(index_pgs))
+  R2_full <- R2_partial  <- rep(NA,  length(index_pgs))
   auc_full <- rep(NA, length(index_pgs))
   auc_covar <- rep(NA, length(index_pgs))
   auc_pgs <- rep(NA, length(index_pgs))
@@ -418,6 +421,10 @@ pgs_marginal_sumstats <- function(
     } else{
       R2_covar <- NA
     }
+    R2_partial[i] <- (R2_full[i] - R2_covar) / (1 - R2_covar)
+
+
+
     ## For binary trait approximate AUC based on sumstats
     if(trait_type == "binary"){
       ncase <- attr(sumstats, "ysum")
@@ -445,8 +452,8 @@ pgs_marginal_sumstats <- function(
 
   }
 
-    df <- data.frame(coef_pgs=alpha_pgs, se=sqrt(var_alpha_pgs),
-                     R2_full=R2_full,log_or = log_or, or = or,  auc_full=auc_full, auc_covar = auc_covar, auc_pgs=auc_pgs)
+    df <- data.frame(beta=beta[index_pgs], coef_pgs=alpha_pgs, se=sqrt(var_alpha_pgs),
+                     log_or = log_or, or = or,  R2_full=R2_full,R2_partial=R2_partial, auc_full=auc_full, auc_covar = auc_covar, auc_pgs=auc_pgs)
     rownames(df) <- pgs_name
     return(df)
 
